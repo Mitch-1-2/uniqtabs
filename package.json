@@ -6,91 +6,101 @@
 	"homepage": "https://github.com/Mitch-1-2/uniqtabs",
 	"license": "Mozilla Public License Version 2.0 (https://www.mozilla.org/MPL/2.0/)",
 	"id": "uniqtabs@mitchellfield.id.au",
-	"version": "0.21",
+	"version": "0.22",
+	"permissions": {
+		"private-browsing": true
+	},
 	"preferences": [
 	{
-        "name": "tabClobber",
-        "title": "",
-        "type": "radio",
+		"name": "tabClobber",
+		"title": "",
+		"type": "radio",
 		"description": "",
-        "value": "none",
+		"value": "none",
 		"options": [
-			{
-				"value": "none",
-				"label": "none"
-			},
-			{
-				"value": "existing",
-				"label": "existing"
-			},
-			{
-				"value": "new",
-				"label": "new"
-			}
+		{
+			"value": "none",
+			"label": "none"
+		},
+		{
+			"value": "existing",
+			"label": "existing"
+		},
+		{
+			"value": "new",
+			"label": "new"
+		}
 		]
-    },
+	},
 	{
-        "name": "tabLimitSoft",
-        "title": "",
-        "description": "",
-        "type": "integer",
-        "value": 0
-    },
+		"name": "tabLimitSoft",
+		"title": "",
+		"description": "",
+		"type": "integer",
+		"value": 0
+	},
 	{
-        "name": "tabLimitHard",
-        "title": "",
-        "description": "",
-        "type": "integer",
-        "value": 0
-    },
+		"name": "tabLimitHard",
+		"title": "",
+		"description": "",
+		"type": "integer",
+		"value": 0
+	},
 	{
-        "name": "tabLimitWarningTimeout",
-        "title": "",
-        "description": "",
-        "type": "integer",
-        "value": 3
-    },
+		"name": "tabLimitWarningTimeout",
+		"title": "",
+		"description": "",
+		"type": "integer",
+		"value": 3
+	},
 	{
-        "name": "tabSortOnIdle",
-        "title": "",
-        "description": "",
-        "type": "integer",
-        "value": 0
-    },
+		"name": "tabSortOnIdle",
+		"title": "",
+		"description": "",
+		"type": "integer",
+		"value": 0
+	},
 	{
-        "name": "tabSortOnHotkey",
-        "title": "",
-        "description": "",
-        "type": "string",
-        "value": "control-shift-d"
-    },
+		"name": "tabSortOnHotkey",
+		"title": "",
+		"description": "",
+		"type": "string",
+		"value": "control-shift-d"
+	},
 	{
-        "name": "tabSortByHost",
-        "title": "",
-        "description": "",
-        "type": "bool",
-        "value": true
-    },
+		"name": "tabSortOnContextMenu",
+		"title": "",
+		"description": "",
+		"type": "bool",
+		"value": true
+	},
 	{
-        "name": "tabSortByTitle",
-        "title": "",
-        "description": "",
-        "type": "bool",
-        "value": true
-    },
+		"name": "tabSortByHost",
+		"title": "",
+		"description": "",
+		"type": "bool",
+		"value": true
+	},
 	{
-        "name": "tabSortByPath",
-        "title": "",
-        "description": "",
-        "type": "bool",
-        "value": false
-    },
+		"name": "tabSortByTitle",
+		"title": "",
+		"description": "",
+		"type": "bool",
+		"value": true
+	},
 	{
-        "name": "tabSortByLastPinnedSimilarity",
-        "title": "",
-        "description": "",
-        "type": "integer",
-        "value": 0
-    }
+		"name": "tabSortByPath",
+		"title": "",
+		"description": "",
+		"type": "bool",
+		"value": false
+	},
+	{
+		"name": "tabSortByLastPinnedSimilarity",
+		"title": "",
+		"description": "",
+		"type": "integer",
+		"value": 0
+	}
 	]
 }
