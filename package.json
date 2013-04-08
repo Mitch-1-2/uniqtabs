@@ -6,7 +6,7 @@
 	"homepage": "https://github.com/Mitch-1-2/uniqtabs",
 	"license": "Mozilla Public License Version 2.0 (https://www.mozilla.org/MPL/2.0/)",
 	"id": "uniqtabs@mitchellfield.id.au",
-	"version": "0.22",
+	"version": "0.23",
 	"permissions": {
 		"private-browsing": true
 	},
@@ -96,11 +96,36 @@
 		"value": false
 	},
 	{
-		"name": "tabSortByLastPinnedSimilarity",
+		"name": "tabSortByPinned",
+		"title": "",
+		"type": "radio",
+		"description": "",
+		"value": "none",
+		"options": [
+		{
+			"value": "none",
+			"label": "none"
+		},
+		{
+			"value": "firstToLast",
+			"label": "firstToLast"
+		},
+		{
+			"value": "lastToFirst",
+			"label": "lastToFirst"
+		},
+		{
+			"value": "last",
+			"label": "last"
+		}
+		]
+	},
+	{
+		"name": "tabSortByPinnedThreshold",
 		"title": "",
 		"description": "",
 		"type": "integer",
-		"value": 0
+		"value": 1
 	}
 	]
 }
