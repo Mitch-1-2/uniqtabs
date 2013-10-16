@@ -75,25 +75,67 @@
 		"value": true
 	},
 	{
-		"name": "tabSortByHost",
+		"name": "tabSortByTimeCreated",
 		"title": "",
+		"type": "radio",
 		"description": "",
-		"type": "bool",
-		"value": true
+		"value": "none",
+		"options": [
+		{
+			"value": "none",
+			"label": "none"
+		},
+		{
+			"value": "most",
+			"label": "most"
+		},
+		{
+			"value": "least",
+			"label": "least"
+		}
+		]
 	},
 	{
-		"name": "tabSortByTitle",
+		"name": "tabSortByTimeAccessed",
 		"title": "",
+		"type": "radio",
 		"description": "",
-		"type": "bool",
-		"value": true
+		"value": "none",
+		"options": [
+		{
+			"value": "none",
+			"label": "none"
+		},
+		{
+			"value": "most",
+			"label": "most"
+		},
+		{
+			"value": "least",
+			"label": "least"
+		}
+		]
 	},
 	{
-		"name": "tabSortByPath",
+		"name": "tabSortBy",
 		"title": "",
+		"type": "radio",
 		"description": "",
-		"type": "bool",
-		"value": false
+		"value": "none",
+		"options": [
+		{
+			"value": "host-title-path",
+			"label": "host-title-path"
+		},
+		{
+			"value": "host-path-title",
+			"label": "host-path-title"
+		},
+		{
+			"value": "title",
+			"label": "title"
+		}
+		]
 	},
 	{
 		"name": "tabSortByPinned",
