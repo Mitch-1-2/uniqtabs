@@ -121,7 +121,7 @@
 		"title": "",
 		"type": "radio",
 		"description": "",
-		"value": "none",
+		"value": "host-title-path",
 		"options": [
 		{
 			"value": "host-title-path",
