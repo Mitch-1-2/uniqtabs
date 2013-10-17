@@ -1,12 +1,12 @@
 {
 	"name": "uniqtabs",
-	"fullName": "uniqtabs",
+	"fullName": "uniqtabs (Unique Tabs)",
 	"description": "Sorts tabs and prevents tab duplicates.",
 	"author": "Mitchell Field",
 	"homepage": "https://github.com/Mitch-1-2/uniqtabs",
 	"license": "Mozilla Public License Version 2.0 (https://www.mozilla.org/MPL/2.0/)",
 	"id": "uniqtabs@mitchellfield.id.au",
-	"version": "0.24",
+	"version": "0.25",
 	"permissions": {
 		"private-browsing": true
 	},
