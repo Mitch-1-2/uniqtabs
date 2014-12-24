@@ -168,6 +168,27 @@
 		"description": "",
 		"type": "integer",
 		"value": 1
+	},
+	{
+		"name": "tabCullBlank",
+		"title": "",
+		"type": "radio",
+		"description": "",
+		"value": "onSort",
+		"options": [
+		{
+			"value": "never",
+			"label": "never"
+		},
+		{
+			"value": "onSort",
+			"label": "onSort"
+		},
+		{
+			"value": "aggressively",
+			"label": "aggressively"
+		}
+		]
 	}
 	]
 }
