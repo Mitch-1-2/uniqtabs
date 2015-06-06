@@ -6,7 +6,7 @@
 	"homepage": "https://github.com/Mitch-1-2/uniqtabs",
 	"license": "Mozilla Public License Version 2.0 (https://www.mozilla.org/MPL/2.0/)",
 	"id": "uniqtabs@mitchellfield.id.au",
-	"version": "0.26",
+	"version": "0.27",
 	"permissions": {
 		"private-browsing": true
 	},
