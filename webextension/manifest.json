@@ -1,0 +1,35 @@
+{
+  "default_locale": "en",
+  "manifest_version": 2,
+  "name": "uniqtabs",
+  "version": "0.30.1",
+
+  "applications": {
+    "gecko": {
+      "id": "uniqtabs@mitchellfield.id.au"
+    }
+  },
+
+  "permissions": [
+    "tabs"
+  ],
+
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+
+  "browser_action": {
+    "browser_style": true,
+    "default_title": "Sort tabs"
+  },
+
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+D"
+      }
+    }
+  }
+}
