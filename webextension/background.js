@@ -288,16 +288,17 @@ function splitHostname(hostname, windowId) {
 
   const tokens = hostname.split('.');
 
-  let splitIndex = tokens.length;
-
-  if (splitIndex > 1) {
-
-    // Check for two-letter ccTLD and preceding ccSLD.
-    splitIndex = tokens[splitIndex - 1].length == 2 ? -2 : -1;
+  const tokensLength = tokens.length;
+  let splitIndex;
+  
+  if (tokensLength > 2) {
+    splitIndex = tokens[tokensLength - 2].length <= 3 ? -2 : -1;
+  } else {
+    splitIndex = 1;
   }
 
   hostnameTokens =
-    [tokens.slice(0, splitIndex).reverse(), tokens.slice(splitIndex)];
+    [tokens.slice(0, splitIndex).reverse(), tokens.slice(splitIndex).reverse()];
 
   tokensMap.set(hostname, hostnameTokens);
 
