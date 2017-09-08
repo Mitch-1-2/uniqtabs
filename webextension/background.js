@@ -286,19 +286,18 @@ function splitHostname(hostname, windowId) {
   if (hostnameTokens)
     return hostnameTokens;
 
-  const tokens = hostname.split('.');
+  const tokens = hostname.split('.').reverse();
 
   const tokensLength = tokens.length;
   let splitIndex;
   
   if (tokensLength > 2) {
-    splitIndex = tokens[tokensLength - 2].length <= 3 ? -2 : -1;
+    splitIndex = tokens[1].length <= 3 ? 2 : 1;
   } else {
     splitIndex = 1;
   }
 
-  hostnameTokens =
-    [tokens.slice(0, splitIndex).reverse(), tokens.slice(splitIndex).reverse()];
+  hostnameTokens = [tokens.slice(splitIndex), tokens.slice(0, splitIndex)];
 
   tokensMap.set(hostname, hostnameTokens);
 
