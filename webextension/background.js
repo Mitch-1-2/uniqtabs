@@ -8,11 +8,11 @@
 
 
 // Set browser action.
-browser.browserAction.onClicked.addListener(sort);
+browser.browserAction.onClicked.addListener(onBrowserAction);
 
 // Set browser action title to localised version.
 browser.browserAction.setTitle({
-    title: browser.i18n.getMessage("sortTabs")
+  title: browser.i18n.getMessage("browserAction_label")
 });
 
 
@@ -25,7 +25,7 @@ const DISCARDABLE_TAB_URLS = new Set([
 const SORT_MODES = new Map([
   ["host-path-title", 0],
   ["host-title-path", 1],
-  ["title", 2]
+  ["title-host-path", 2]
 ]);
 
 const cullingWindows = new Set();
@@ -33,30 +33,47 @@ const sortingWindows = new Set();
 
 const hostnameTokenCache = new Map();
 const pathnameTokenCache = new Map();
+const tabPropsCache = new Map();
+
+
+/*
+ * Called when the "browser action" is invoked.
+ */
+function onBrowserAction() {
+  sortTabs();
+}
 
 
 /*
  * Sorts tabs and removes blank tabs.
  */
-function sort() {
-  const currentWindowPromise = browser.windows.getCurrent({
+function sortTabs() {
+  const gettingCurrentWindow = browser.windows.getCurrent({
     populate: true,
     windowTypes: ["normal"]
   });
 
-  currentWindowPromise.then(windowInfo => {
-    const unpinnedTabsPromise = browser.tabs.query({
+  gettingCurrentWindow.then(windowInfo => {
+    const gettingUnpinnedTabs = browser.tabs.query({
       pinned: false,
       windowId: windowInfo.id
     });
 
-    unpinnedTabsPromise.then(unpinnedTabs => {
+    gettingUnpinnedTabs.then(unpinnedTabs => {
+
+      const windowId = windowInfo.id;
 
       // Check if window is already being sorted.
-      if (sortingWindows.has(windowInfo.id))
+      if (sortingWindows.has(windowId))
         return;
 
-      sortingWindows.add(windowInfo.id);
+      sortingWindows.add(windowId);
+
+      // Initialise various caches for the window.
+
+      hostnameTokenCache.set(windowId, new Map());
+      pathnameTokenCache.set(windowId, new Map());
+      tabPropsCache.set(windowId, new Map());
 
       // Get first tab index.
       const {index} = unpinnedTabs[0];
@@ -64,45 +81,89 @@ function sort() {
       unpinnedTabs.sort(compareTabs);
 
       // Move tabs into place.
-      const movedTabsPromise = browser.tabs.move(
+      const gettingMovedTabs = browser.tabs.move(
         unpinnedTabs.map(tab => tab.id), {index: index});
 
-      movedTabsPromise.then(tabsArray => {
+      gettingMovedTabs.then(tabsArray => {
 
         // Filter tabs which are relatively safe to remove.
         const blankTabs = tabsArray.filter(tab => {
           return DISCARDABLE_TAB_URLS.has(tab.url) && tab.status == "complete";
         });
 
-        let removedTabsPromise;
+        let gettingRemovedTabs;
 
         if (blankTabs.length > 0) {
 
           // Create a new blank tab to remain after culling.
-          const newTabPromise = browser.tabs.create({
+          const gettingNewTab = browser.tabs.create({
             active: false,
-            windowId: windowInfo.id
+            windowId: windowId
           });
 
           // Remove the older blank tabs.
-          removedTabsPromise = newTabPromise.then(
+          gettingRemovedTabs = gettingNewTab.then(
             browser.tabs.remove(blankTabs.map(tab => tab.id)));
         } else {
 
           // Remove all blank tabs.
-          removedTabsPromise = browser.tabs.remove(
+          gettingRemovedTabs = browser.tabs.remove(
             blankTabs.map(tab => tab.id));
         }
 
-        // Allow the window to be sorted again.
-        removedTabsPromise.then(removedTabs => {
-          hostnameTokenCache.clear();
-          pathnameTokenCache.clear();
-          sortingWindows.delete(windowInfo.id);
+        gettingRemovedTabs.then(removedTabs => {
+
+          // Clear the window's caches.
+          hostnameTokenCache.get(windowId).clear();
+          pathnameTokenCache.get(windowId).clear();
+          tabPropsCache.get(windowId).clear();
+
+          // Allow the window's tabs to be sorted again.
+          sortingWindows.delete(windowId);
         });
       });
     });
   });
+}
+
+
+/*
+ * Gets certain properties of a tab.
+ *
+ * Tab properties are cached per-window for next access.
+ *
+ * @param tab           tab
+ * @return              tab properties object
+ */
+function getTabProps(tab) {
+
+  const {id: tabId, windowId} = tab;
+
+  const tabPropsMap = tabPropsCache.get(windowId);
+  let tabProps = tabPropsMap.get(tabId);
+
+  if (tabProps)
+    return tabProps;
+
+  const {
+    protocol = ':',
+    hostname = '',
+    pathname = '/',
+    hash = '#'
+  } = new URL(tab.url || '');
+
+  tabProps = {
+    hostname,
+    pathname,
+    hash,
+    hasAboutScheme: protocol === "about",
+    hasPathname: pathname !== '/',
+    title: tab.title || '',
+  };
+
+  tabPropsMap.set(tabId, tabProps);
+
+  return tabProps;
 }
 
 
@@ -115,102 +176,59 @@ function sort() {
  */
 function compareTabs(tabA, tabB) {
 
-  if (!tabA.url || !tabB.url)
-    return;
+  const propsA = getTabProps(tabA);
+  const propsB = getTabProps(tabB);
 
-  // Destructure tab 'A' URL.
-  const {
-    protocol: protocolA = ':',
-    hostname: hostnameA = '',
-    pathname: pathnameA = '/',
-    hash: hashA = '#'
-  } = new URL(tabA.url);
-
-  const hasAboutSchemeA = protocolA === "about";
-
-  const titleA = tabA.title || '';
-
-  // Destructure tab 'B' URL.
-  const {
-    protocol: protocolB = ':',
-    hostname: hostnameB = '',
-    pathname: pathnameB = '/',
-    hash: hashB = '#'
-  } = new URL(tabB.url);
-
-  const hasAboutSchemeB = protocolB === "about";
-
-  const titleB = tabB.title || '';
-
-  if (hasAboutSchemeA && !hasAboutSchemeB)
-    return 1;
-
-  if (!hasAboutSchemeA && hasAboutSchemeB)
-    return -1;
+  const windowIdA = tabA.windowId;
+  const windowIdB = tabB.windowId;
 
   let sortMode = 1; //XXX hardcoded until preferences are implemented.
 
-  let compResult;
+  let result;
 
-  if (sortMode === 2) {
+  if ((result = propsA.hasAboutScheme - propsB.hasAboutScheme) !== 0)
+    return result;
 
-    // Title comparison.
-    return titleA.localeCompare(titleB);
-  } else if (sortMode < 2) {
+  if (sortMode === 2) { // title-host-path sorting. Compare titles.
+    if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
+      return result;
+  }
 
-    // Split the hostname's TLD from its lower-level domains.
-    const [lowerDomainTokensA, tldA] = splitHostname(hostnameA);
-    const [lowerDomainTokensB, tldB] = splitHostname(hostnameB);
+  // Split the hostname's TLD from its lower-level domains.
+  const [lowerDomainTokensA, tldA] = splitHostname(propsA.hostname, windowIdA);
+  const [lowerDomainTokensB, tldB] = splitHostname(propsB.hostname, windowIdB);
 
-    // Host comparison.
-    compResult = compareTokens(lowerDomainTokensA, lowerDomainTokensB);
+  // Compare hostnames.
+  if ((result = compareTokens(lowerDomainTokensA, lowerDomainTokensB)) !== 0)
+    return result;
 
-    if (compResult !== 0)
-      return compResult;
+  // Compare TLDs.
+  if ((result = compareTokens(tldA, tldB)) !== 0)
+    return result;
 
-    // TLD comparison.
-    compResult = compareTokens(tldA, tldB);
+  // Compare pathlessness.
+  if ((result = propsA.hasPathname - propsB.hasPathname) !== 0)
+    return result;
 
-    if (compResult !== 0)
-      return compResult;
+  if (sortMode === 1) { // host-title-path sorting. Compare titles.
+    if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
+      return result;
+  }
 
-    const isPathlessA = pathnameA === '/';
-    const isPathlessB = pathnameB === '/';
+  // Compare pathnames.
+  result = compareTokens(splitPathname(propsA.pathname, windowIdA),
+    splitPathname(propsB.pathname, windowIdB));
 
-    if (isPathlessB)
-      return +!isPathlessA;
+  if (result !== 0)
+    return result;
 
-    if (isPathlessA)
-      return -1;
+  // Compare hashes (fragments).
+  if ((result = propsA.hash.localeCompare(propsB.hash)) !== 0)
+    return result;
 
-    if (sortMode === 0) {
-
-      // Title comparison.
-      compResult = titleA.localeCompare(titleB);
-
-      if (compResult !== 0)
-        return compResult;
-
-      // Pathname comparison.
-      compResult = compareTokens(splitPathname(pathnameA),
-        splitPathname(pathnameB));
-
-      if (compResult !== 0)
-        return compResult;
-
-      // Hash (fragment) comparison.
-      compResult = hashA.localeCompare(hashB);
-      if (compResult !== 0)
-        return compResult;
-
-      if (sortMode === 1) {
-
-        // Title comparison.
-        compResult = titleA.localeCompare(titleB);
-        if (compResult !== 0)
-          return compResult;
-      }
-    }
+  if (sortMode === 0) { // host-path-title. Compare titles.
+    if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
+      return result;
   }
 
   return 0;
@@ -227,32 +245,24 @@ function compareTabs(tabA, tabB) {
  * @param tokensB       second array of tokens for comparison
  * @return              comparison numeric result
  */
-function compareTokens(tokensA, tokensB)
-{
+function compareTokens(tokensA, tokensB) {
+
   const tokensALength = tokensA.length;
   const tokensBLength = tokensB.length;
 
   for (let tokenIndex = 0; ; ++tokenIndex) {
-    const eotA = tokenIndex >= tokensALength; // End of 'A' tokens.
-    const eotB = tokenIndex >= tokensBLength; // End of 'B' tokens.
+    const isEndedA = tokenIndex >= tokensALength; // End of 'A' tokens.
+    const isEndedB = tokenIndex >= tokensBLength; // End of 'B' tokens.
 
-    if (eotB) {
-
-      /* Ran out of "B" tokens.
-       * Return 0 if also out of "A" tokens, or 1 if not.
-       */
-      return +!eotA;
-    }
-
-    if (eotA)
-      return -1;
+    if (isEndedA || isEndedB)
+      return isEndedB - isEndedA;
 
     const tokenA = tokensA[tokenIndex];
     const tokenB = tokensB[tokenIndex];
-    const compResult = tokenA.localeCompare(tokenB);
+    const result = tokenA.localeCompare(tokenB);
 
-    if (compResult !== 0)
-      return compResult;
+    if (result !== 0)
+      return result;
   }
 
   return 0;
@@ -262,17 +272,21 @@ function compareTokens(tokensA, tokensB)
 /*
  * Roughly split hostname into top-level and lower-level domains.
  *
+ * Will set/get cache entries by hostname and window ID.
+ *
  * @param hostname      URL hostname
+ * @param windowId      ID of associated window
  * @return              [lower-level domain tokens, top-level domain tokens]
  */
-function splitHostname(hostname)
-{
-  let tokens = hostnameTokenCache.get(hostname);
+function splitHostname(hostname, windowId) {
 
-  if (tokens !== undefined)
-    return tokens;
+  const tokensMap = hostnameTokenCache.get(windowId);
+  let hostnameTokens = tokensMap.get(hostname);
 
-  tokens = hostname.split('.');
+  if (hostnameTokens)
+    return hostnameTokens;
+
+  const tokens = hostname.split('.');
 
   let splitIndex = tokens.length;
 
@@ -282,10 +296,10 @@ function splitHostname(hostname)
     splitIndex = tokens[splitIndex - 1].length == 2 ? -2 : -1;
   }
 
-  const hostnameTokens =
+  hostnameTokens =
     [tokens.slice(0, splitIndex).reverse(), tokens.slice(splitIndex)];
 
-  hostnameTokenCache.set(hostname, hostnameTokens);
+  tokensMap.set(hostname, hostnameTokens);
 
   return hostnameTokens;
 }
@@ -294,19 +308,23 @@ function splitHostname(hostname)
 /*
  * Split pathname into tokens.
  *
+ * Will set/get cache entries by pathname and window ID.
+ *
  * @param hostname      URL pathname
+ * @param windowId      ID of associated window
  * @return              [pathname tokens]
  */
-function splitPathname(pathname)
-{
-  let tokens = pathnameTokenCache.get(pathname);
+function splitPathname(pathname, windowId) {
 
-  if (tokens !== undefined)
-    return tokens;
+  const tokensMap = pathnameTokenCache.get(windowId);
+  let pathnameTokens = tokensMap.get(pathname);
 
-  tokens = pathname.split('/');
+  if (pathnameTokens)
+    return pathnameTokens;
 
-  pathnameTokenCache.set(pathname, tokens);
+  pathnameTokens = pathname.split('/');
 
-  return tokens;
+  tokensMap.set(pathname, pathnameTokens);
+
+  return pathnameTokens;
 }
