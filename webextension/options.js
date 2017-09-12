@@ -8,7 +8,8 @@
 
 
 const DEFAULT_PREFS = {
-  "pref_tabSortByURL": "host_title_path"
+  "pref_tabSortByURL": "host_title_path",
+  "pref_tabSortBySearchParams": "true"
 };
 
 

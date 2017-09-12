@@ -25,5 +25,8 @@
   },
   "pref_tabSortByURL_option_2": {
     "message": "title, host, path"
+  },
+  "pref_tabSortBySearchParams_label": {
+    "message": "Sort tabs by search parameters:"
   }
 }

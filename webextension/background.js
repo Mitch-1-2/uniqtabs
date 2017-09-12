@@ -32,7 +32,8 @@ const SORT_MODES = new Map([
 ]);
 
 const DEFAULT_PREFS = {
-  "pref_tabSortByURL": "host_title_path"
+  "pref_tabSortByURL": "host_title_path",
+  "pref_tabSortBySearchParams": "true"
 };
 
 const PREFS = Object.assign(DEFAULT_PREFS);
@@ -168,12 +169,14 @@ function getTabProps(tab) {
     protocol = ':',
     hostname = '',
     pathname = '/',
+    searchParams = '',
     hash = '#'
   } = new URL(tab.url || '');
 
   tabProps = {
     hostname,
     pathname,
+    searchParams: searchParams.toString(),
     hash,
     hasAboutScheme: protocol === "about",
     hasPathname: pathname !== '/',
@@ -241,6 +244,11 @@ function compareTabs(tabA, tabB) {
 
   if (result !== 0)
     return result;
+
+  // Compare search parameters.
+  if ((result = propsA.searchParams.localeCompare(propsB.searchParams)) !== 0) {
+    return result;
+  }
 
   // Compare hashes (fragments).
   if ((result = propsA.hash.localeCompare(propsB.hash)) !== 0)
