@@ -2,11 +2,17 @@
   "browserAction_label": {
     "message": "Sort tabs"
   },
-  "options_ui_button_reset": {
+  "options_ui_reset": {
     "message": "Reset"
   },
-  "options_ui_button_submit": {
+  "options_ui_submit": {
     "message": "Save"
+  },
+  "options_ui_submit_unsaved_label": {
+    "message": "Options unsaved. \u2718"
+  },
+  "options_ui_submit_saved_label": {
+    "message": "Options saved. \u2714"
   },
   "pref_tabSortByURL_label": {
     "message": "Sort tabs by URL parts:"
