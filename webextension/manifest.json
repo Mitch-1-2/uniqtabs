@@ -11,6 +11,7 @@
   },
 
   "permissions": [
+    "storage",
     "tabs"
   ],
 
@@ -31,5 +32,11 @@
         "default": "Ctrl+Shift+D"
       }
     }
+  },
+
+  "options_ui": {
+    "browser_style": true,
+    "page": "options.html",
+    "open_in_tab": false
   }
 }

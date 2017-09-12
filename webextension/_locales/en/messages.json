@@ -1,5 +1,23 @@
 {
   "browserAction_label": {
     "message": "Sort tabs"
+  },
+  "options_ui_button_reset": {
+    "message": "Reset"
+  },
+  "options_ui_button_submit": {
+    "message": "Save"
+  },
+  "pref_tabSortByURL_label": {
+    "message": "Sort tabs by URL parts:"
+  },
+  "pref_tabSortByURL_option_0": {
+    "message": "host, title, path"
+  },
+  "pref_tabSortByURL_option_1": {
+    "message": "host, path, title"
+  },
+  "pref_tabSortByURL_option_2": {
+    "message": "title, host, path"
   }
 }

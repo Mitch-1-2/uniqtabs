@@ -15,6 +15,9 @@ browser.browserAction.setTitle({
   title: browser.i18n.getMessage("browserAction_label")
 });
 
+// Listen to changes in storage.
+browser.storage.onChanged.addListener(onStorageChanged);
+
 
 const DISCARDABLE_TAB_URLS = new Set([
   "about:blank",
@@ -23,10 +26,16 @@ const DISCARDABLE_TAB_URLS = new Set([
 ]);
 
 const SORT_MODES = new Map([
-  ["host-path-title", 0],
-  ["host-title-path", 1],
-  ["title-host-path", 2]
+  ["host_path_title", 0],
+  ["host_title_path", 1],
+  ["title_host_path", 2]
 ]);
+
+const DEFAULT_PREFS = {
+  "pref_tabSortByURL": "host_title_path"
+};
+
+const PREFS = Object.assign(DEFAULT_PREFS);
 
 const cullingWindows = new Set();
 const sortingWindows = new Set();
@@ -41,6 +50,16 @@ const tabPropsCache = new Map();
  */
 function onBrowserAction() {
   sortTabs();
+}
+
+
+/*
+ * Called when a storage area is changed.
+ */
+function onStorageChanged(changes, areaName) {
+  if (areaName === "sync" && ("preferences" in changes)) {
+    Object.assign(PREFS, changes.preferences.newValue);
+  }
 }
 
 
@@ -182,7 +201,8 @@ function compareTabs(tabA, tabB) {
   const windowIdA = tabA.windowId;
   const windowIdB = tabB.windowId;
 
-  let sortMode = 1; //XXX hardcoded until preferences are implemented.
+  // Map the string preference value to a number.
+  let sortMode = SORT_MODES.get(PREFS.pref_tabSortByURL);
 
   let result;
 
