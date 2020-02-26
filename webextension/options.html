@@ -17,6 +17,7 @@
     <form id="form">
       <label for="pref_tabSortByURL"></label>
       <select id="pref_tabSortByURL">
+        <option value="none"></option>
         <option value="host_title_path"></option>
         <option value="host_path_title"></option>
         <option value="title_host_path"></option>
@@ -25,6 +26,11 @@
       <br/>
       <label for="pref_tabSortBySearchParams"></label>
       <input id="pref_tabSortBySearchParams" type="checkbox" checked="checked"
+        autocomplete="off"/>
+      <br/>
+      <br/>
+      <label for="pref_tabDeduplicate"></label>
+      <input id="pref_tabDeduplicate" type="checkbox"
         autocomplete="off"/>
       <br/>
       <br/>

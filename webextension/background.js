@@ -10,9 +10,9 @@
 // Set browser action.
 browser.browserAction.onClicked.addListener(onBrowserAction);
 
-// Set browser action title to localised version.
+// Set default browser action title.
 browser.browserAction.setTitle({
-  title: browser.i18n.getMessage("browserAction_label")
+  title: browser.i18n.getMessage("browserAction_none_label")
 });
 
 // Listen to changes in storage.
@@ -26,13 +26,15 @@ const DISCARDABLE_TAB_URLS = new Set([
 ]);
 
 const SORT_MODES = new Map([
-  ["host_path_title", 0],
-  ["host_title_path", 1],
-  ["title_host_path", 2]
+  ["none", 0],
+  ["host_path_title", 1],
+  ["host_title_path", 2],
+  ["title_host_path", 3]
 ]);
 
 const DEFAULT_PREFS = {
-  "pref_tabSortByURL": "host_title_path",
+  "pref_tabDeduplicate": "false",
+  "pref_tabSortByURL": "none",
   "pref_tabSortBySearchParams": "true"
 };
 
@@ -49,8 +51,18 @@ const tabPropsCache = new Map();
 /*
  * Called when the "browser action" is invoked.
  */
-function onBrowserAction() {
-  sortTabs();
+function onBrowserAction(tab, onClickData) {
+  let sort = PREFS.pref_tabSortByURL !== "none";
+  let deduplicate = PREFS.pref_tabDeduplicate === "true";
+
+  if (!sort && !deduplicate) {
+
+    // The browser action is not configured to sort nor deduplicate tabs.
+    browser.runtime.openOptionsPage();
+    return;
+  }
+
+  processTabs(tab.windowId, sort, deduplicate);
 }
 
 
@@ -58,22 +70,54 @@ function onBrowserAction() {
  * Called when a storage area is changed.
  */
 function onStorageChanged(changes, areaName) {
-  if (areaName === "sync" && ("preferences" in changes)) {
-    Object.assign(PREFS, changes.preferences.newValue);
+  if (areaName !== "sync" || !("preferences" in changes)) {
+    return;
   }
+
+  Object.assign(PREFS, changes.preferences.newValue);
+
+  let sort = PREFS.pref_tabSortByURL !== "none";
+  let deduplicate = PREFS.pref_tabDeduplicate === "true";
+
+  // Default browser action title.
+  let titleMessageID = "browserAction_none_label";
+
+  if (sort) {
+    if (deduplicate) {
+
+      // Sort and deduplicate.
+      titleMessageID = "browserAction_sort_deduplicate_label";
+    } else {
+
+      // Sort.
+      titleMessageID = "browserAction_sort_label";
+    }
+  } else if (deduplicate) {
+
+    // Deduplicate.
+    titleMessageID = "browserAction_deduplicate_label";
+  }
+
+  // Set browser action title.
+  browser.browserAction.setTitle({
+    title: browser.i18n.getMessage(titleMessageID)
+  });
 }
 
 
 /*
- * Sorts tabs and removes blank tabs.
+ * Sorts, deduplicates, and removes low-priority (or blank) tabs.
+ *
+ * @param windowId      window ID
+ * @param sort          sort tabs
+ * @param deduplicate   deduplicate tabs
  */
-function sortTabs() {
-  const gettingCurrentWindow = browser.windows.getCurrent({
-    populate: true,
-    windowTypes: ["normal"]
+function processTabs(windowId, sort, deduplicate) {
+  const gettingWindow = browser.windows.get(windowId, {
+    populate: true
   });
 
-  gettingCurrentWindow.then(windowInfo => {
+  gettingWindow.then(windowInfo => {
     const gettingUnpinnedTabs = browser.tabs.query({
       pinned: false,
       windowId: windowInfo.id
@@ -98,37 +142,56 @@ function sortTabs() {
       // Get first tab index.
       const {index} = unpinnedTabs[0];
 
+      // Get sorting order for tabs.
       unpinnedTabs.sort(compareTabs);
 
-      // Move tabs into place.
-      const gettingMovedTabs = browser.tabs.move(
-        unpinnedTabs.map(tab => tab.id), {index: index});
+      let gettingMovedTabs;
+
+      if (sort) {
+
+        // Move tabs into place.
+        gettingMovedTabs = browser.tabs.move(
+          unpinnedTabs.map(tab => tab.id), {index: index});
+      } else {
+
+        // No-op.
+        gettingMovedTabs = new Promise((resolve, reject) => {
+          resolve(unpinnedTabs);
+        });
+      }
 
       gettingMovedTabs.then(tabsArray => {
+        let tabProps;
 
-        // Filter tabs which are relatively safe to remove.
-        const blankTabs = tabsArray.filter(tab => {
-          return DISCARDABLE_TAB_URLS.has(tab.url) && tab.status == "complete";
+        // Filter duplicate and discardable tabs.
+        const unwantedTabs = tabsArray.filter(tab => {
+          tabProps = getTabProps(tab);
+          return tab.status === "complete" &&
+            (tabProps.isDiscardable || deduplicate && tabProps.isDuplicate)
+        });
+
+        // Check for discardable tabs.
+        const hasDiscardableTabs = tabsArray.some(tab => {
+          tabProps = getTabProps(tab);
+          return tab.status === "complete" && tabProps.isDiscardable;
         });
 
         let gettingRemovedTabs;
 
-        if (blankTabs.length > 0) {
+        if (hasDiscardableTabs) {
 
-          // Create a new blank tab to remain after culling.
+          // Create a new tab to remain after culling.
           const gettingNewTab = browser.tabs.create({
             active: false,
             windowId: windowId
           });
 
-          // Remove the older blank tabs.
+          // Remove tabs.
           gettingRemovedTabs = gettingNewTab.then(
-            browser.tabs.remove(blankTabs.map(tab => tab.id)));
+            browser.tabs.remove(unwantedTabs.map(tab => tab.id)));
         } else {
-
-          // Remove all blank tabs.
           gettingRemovedTabs = browser.tabs.remove(
-            blankTabs.map(tab => tab.id));
+            unwantedTabs.map(tab => tab.id));
         }
 
         gettingRemovedTabs.then(removedTabs => {
@@ -157,7 +220,11 @@ function sortTabs() {
  */
 function getTabProps(tab) {
 
-  const {id: tabId, windowId} = tab;
+  const {
+    id: tabId,
+    index: tabIndex,
+    windowId
+  } = tab;
 
   const tabPropsMap = tabPropsCache.get(windowId);
   let tabProps = tabPropsMap.get(tabId);
@@ -181,6 +248,9 @@ function getTabProps(tab) {
     hasAboutScheme: protocol === "about",
     hasPathname: pathname !== '/',
     title: tab.title || '',
+    index: tabIndex,
+    isDiscardable: DISCARDABLE_TAB_URLS.has(tab.url),
+    isDuplicate: false
   };
 
   tabPropsMap.set(tabId, tabProps);
@@ -212,7 +282,7 @@ function compareTabs(tabA, tabB) {
   if ((result = propsA.hasAboutScheme - propsB.hasAboutScheme) !== 0)
     return result;
 
-  if (sortMode === 2) { // title-host-path sorting. Compare titles.
+  if (sortMode === 3) { // title-host-path sorting. Compare titles.
     if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
       return result;
   }
@@ -233,7 +303,7 @@ function compareTabs(tabA, tabB) {
   if ((result = propsA.hasPathname - propsB.hasPathname) !== 0)
     return result;
 
-  if (sortMode === 1) { // host-title-path sorting. Compare titles.
+  if (sortMode === 2) { // host-title-path sorting. Compare titles.
     if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
       return result;
   }
@@ -257,6 +327,13 @@ function compareTabs(tabA, tabB) {
   if (sortMode === 0) { // host-path-title. Compare titles.
     if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
       return result;
+  }
+
+  // The two tabs are considered duplicate. Mark the later tab as a duplicate.
+  if (propsA.index < propsB.index) {
+    propsB.isDuplicate = true;
+  } else {
+    propsA.isDuplicate = true;
   }
 
   return 0;

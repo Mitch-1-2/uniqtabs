@@ -1,5 +1,14 @@
 {
-  "browserAction_label": {
+  "browserAction_deduplicate_label": {
+    "message": "Deduplicate tabs"
+  },
+  "browserAction_none_label": {
+    "message": "uniqtabs: Click to configure tab sorting"
+  },
+  "browserAction_sort_deduplicate_label": {
+    "message": "Sort and deduplicate tabs"
+  },
+  "browserAction_sort_label": {
     "message": "Sort tabs"
   },
   "options_ui_reset": {
@@ -14,16 +23,22 @@
   "options_ui_submit_saved_label": {
     "message": "Options saved. \u2714"
   },
+  "pref_tabDeduplicate_label": {
+    "message": "Deduplicate tabs on browser action"
+  },
   "pref_tabSortByURL_label": {
     "message": "Sort tabs by URL parts:"
   },
   "pref_tabSortByURL_option_0": {
-    "message": "host, title, path"
+    "message": "none"
   },
   "pref_tabSortByURL_option_1": {
-    "message": "host, path, title"
+    "message": "host, title, path (recommended)"
   },
   "pref_tabSortByURL_option_2": {
+    "message": "host, path, title"
+  },
+  "pref_tabSortByURL_option_3": {
     "message": "title, host, path"
   },
   "pref_tabSortBySearchParams_label": {
