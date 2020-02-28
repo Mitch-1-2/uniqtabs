@@ -11,34 +11,37 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <link href="options.css" rel="stylesheet">
+    <title>uniqtabs (Unique Tabs) options</title>
   </head>
-
   <body>
-    <form id="form">
-      <label for="pref_tabSortByURL"></label>
-      <select id="pref_tabSortByURL">
-        <option value="none"></option>
-        <option value="host_title_path"></option>
-        <option value="host_path_title"></option>
-        <option value="title_host_path"></option>
-      </select>
-      <br/>
-      <br/>
-      <label for="pref_tabSortBySearchParams"></label>
-      <input id="pref_tabSortBySearchParams" type="checkbox" checked="checked"
-        autocomplete="off"/>
-      <br/>
-      <br/>
-      <label for="pref_tabDeduplicate"></label>
-      <input id="pref_tabDeduplicate" type="checkbox"
-        autocomplete="off"/>
-      <br/>
-      <br/>
-      <button id="reset" type="reset"></button>
-      <button id="submit" type="submit"></button>
-      <label id="submit_label" for="submit"></label>
-    </form>
+    <div>
+      <form id="form">
+        <div class="browser-style">
+          <label for="pref_tabSortByParts"></label>
+          <select id="pref_tabSortByParts" class="browser-style">
+            <option value="none">&nbsp;</option>
+            <option value="host_title_path">&nbsp;</option>
+            <option value="host_path_title">&nbsp;</option>
+            <option value="title_host_path">&nbsp;</option>
+          </select>
+        </div>
+        <div class="browser-style">
+          <input id="pref_tabSortBySearchParams" type="checkbox"
+            checked="checked"/>
+            <label for="pref_tabSortBySearchParams"></label>
+        </div>
+        <div class="browser-style">
+          <input id="pref_tabDeduplicate" type="checkbox"/>
+            <label for="pref_tabDeduplicate"></label>
+        </div>
+        <div class="browser-style">
+          <button id="reset" type="reset" class="browser-style"></button>
+          <button id="submit" type="submit" class="browser-style"></button>
+          <label id="submit_label" for="submit"></label>
+        </div>
+      </form>
+    </div>
     <script src="options.js"></script>
   </body>
-
 </html>

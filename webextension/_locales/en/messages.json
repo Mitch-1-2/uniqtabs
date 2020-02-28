@@ -26,22 +26,22 @@
   "pref_tabDeduplicate_label": {
     "message": "Deduplicate tabs on browser action"
   },
-  "pref_tabSortByURL_label": {
-    "message": "Sort tabs by URL parts:"
+  "pref_tabSortByParts_label": {
+    "message": "Sort tabs by"
   },
-  "pref_tabSortByURL_option_0": {
-    "message": "none"
+  "pref_tabSortByParts_option_0": {
+    "message": "none (no sorting)"
   },
-  "pref_tabSortByURL_option_1": {
-    "message": "host, title, path (recommended)"
+  "pref_tabSortByParts_option_1": {
+    "message": "URL host, title, URL path (recommended)"
   },
-  "pref_tabSortByURL_option_2": {
-    "message": "host, path, title"
+  "pref_tabSortByParts_option_2": {
+    "message": "URL host, URL path, title"
   },
-  "pref_tabSortByURL_option_3": {
-    "message": "title, host, path"
+  "pref_tabSortByParts_option_3": {
+    "message": "title, URL host, URL path"
   },
   "pref_tabSortBySearchParams_label": {
-    "message": "Sort tabs by search parameters:"
+    "message": "Sort tabs by search parameters"
   }
 }

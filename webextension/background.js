@@ -34,7 +34,7 @@ const SORT_MODES = new Map([
 
 const DEFAULT_PREFS = {
   "pref_tabDeduplicate": "false",
-  "pref_tabSortByURL": "none",
+  "pref_tabSortByParts": "none",
   "pref_tabSortBySearchParams": "true"
 };
 
@@ -52,7 +52,7 @@ const tabPropsCache = new Map();
  * Called when the "browser action" is invoked.
  */
 function onBrowserAction(tab, onClickData) {
-  let sort = PREFS.pref_tabSortByURL !== "none";
+  let sort = PREFS.pref_tabSortByParts !== "none";
   let deduplicate = PREFS.pref_tabDeduplicate === "true";
 
   if (!sort && !deduplicate) {
@@ -76,7 +76,7 @@ function onStorageChanged(changes, areaName) {
 
   Object.assign(PREFS, changes.preferences.newValue);
 
-  let sort = PREFS.pref_tabSortByURL !== "none";
+  let sort = PREFS.pref_tabSortByParts !== "none";
   let deduplicate = PREFS.pref_tabDeduplicate === "true";
 
   // Default browser action title.
@@ -275,7 +275,7 @@ function compareTabs(tabA, tabB) {
   const windowIdB = tabB.windowId;
 
   // Map the string preference value to a number.
-  let sortMode = SORT_MODES.get(PREFS.pref_tabSortByURL);
+  let sortMode = SORT_MODES.get(PREFS.pref_tabSortByParts);
 
   let result;
 
