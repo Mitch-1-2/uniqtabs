@@ -27,8 +27,8 @@ const DISCARDABLE_TAB_URLS = new Set([
 
 const SORT_MODES = new Map([
   ["none", 0],
-  ["host_path_title", 1],
-  ["host_title_path", 2],
+  ["host_title_path", 1],
+  ["host_path_title", 2],
   ["title_host_path", 3]
 ]);
 
@@ -303,7 +303,7 @@ function compareTabs(tabA, tabB) {
   if ((result = propsA.hasPathname - propsB.hasPathname) !== 0)
     return result;
 
-  if (sortMode === 2) { // host-title-path sorting. Compare titles.
+  if (sortMode === 1) { // host-title-path sorting. Compare titles.
     if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
       return result;
   }
@@ -324,7 +324,7 @@ function compareTabs(tabA, tabB) {
   if ((result = propsA.hash.localeCompare(propsB.hash)) !== 0)
     return result;
 
-  if (sortMode === 0) { // host-path-title. Compare titles.
+  if (sortMode === 2) { // host-path-title. Compare titles.
     if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
       return result;
   }
