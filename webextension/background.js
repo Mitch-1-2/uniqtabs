@@ -45,7 +45,65 @@ const sortingWindows = new Set();
 
 const hostnameTokenCache = new Map();
 const pathnameTokenCache = new Map();
-const tabPropsCache = new Map();
+
+
+function TabProps(tab) {
+  const { id, index, status, title, url, windowId } = tab;
+
+  const {
+    protocol = ':',
+    hostname = '',
+    pathname = '/',
+    searchParams = '',
+    hash = '#'
+  } = new URL(url || '');
+
+  Object.assign(this, {
+    _lowerDomainTokens: null,
+    _pathnameTokens: null,
+    _tldTokens: null,
+    hasAboutScheme: protocol === "about",
+    hasPathname: pathname !== '/',
+    hash,
+    hostname,
+    id,
+    index,
+    isDiscardable: DISCARDABLE_TAB_URLS.has(url),
+    isDuplicate: false,
+    pathname,
+    searchParams: searchParams.toString(),
+    status,
+    tab,
+    title: title || '',
+    url,
+    windowId
+  });
+}
+
+TabProps.prototype = {
+  get lowerDomainTokens() {
+    if (!this._lowerDomainTokens) {
+      const hostnameTokens = splitHostname(this.hostname, this.windowId);
+      this._tldTokens = hostnameTokens[0];
+      this._lowerDomainTokens = hostnameTokens[1];
+    }
+    return this._lowerDomainTokens;
+  },
+  get pathnameTokens() {
+    if (!this._pathnameTokens) {
+      this._pathnameTokens = splitPathname(this.pathname, this.windowId);
+    }
+    return this._pathnameTokens;
+  },
+  get tldTokens() {
+    if (!this._tldTokens) {
+      const hostnameTokens = splitHostname(this.hostname, this.windowId);
+      this._tldTokens = hostnameTokens[0];
+      this._lowerDomainTokens = hostnameTokens[1];
+    }
+    return this._tldTokens;
+  }
+}
 
 
 /*
@@ -120,12 +178,10 @@ function processTabs(windowId, sort, deduplicate) {
   gettingWindow.then(windowInfo => {
     const gettingUnpinnedTabs = browser.tabs.query({
       pinned: false,
-      windowId: windowInfo.id
+      windowId,
     });
 
     gettingUnpinnedTabs.then(unpinnedTabs => {
-
-      const windowId = windowInfo.id;
 
       // Check if window is already being sorted.
       if (sortingWindows.has(windowId))
@@ -134,16 +190,17 @@ function processTabs(windowId, sort, deduplicate) {
       sortingWindows.add(windowId);
 
       // Initialise various caches for the window.
-
       hostnameTokenCache.set(windowId, new Map());
       pathnameTokenCache.set(windowId, new Map());
-      tabPropsCache.set(windowId, new Map());
 
       // Get first tab index.
       const {index} = unpinnedTabs[0];
 
+      const tabPropsArray =
+        unpinnedTabs.map(unpinnedTab => new TabProps(unpinnedTab));
+
       // Get sorting order for tabs.
-      unpinnedTabs.sort(compareTabs);
+      tabPropsArray.sort(compareTabs);
 
       let gettingMovedTabs;
 
@@ -151,7 +208,7 @@ function processTabs(windowId, sort, deduplicate) {
 
         // Move tabs into place.
         gettingMovedTabs = browser.tabs.move(
-          unpinnedTabs.map(tab => tab.id), {index: index});
+          tabPropsArray.map(tabProps => tabProps.id), {index: index});
       } else {
 
         // No-op.
@@ -160,21 +217,16 @@ function processTabs(windowId, sort, deduplicate) {
         });
       }
 
-      gettingMovedTabs.then(tabsArray => {
-        let tabProps;
+      gettingMovedTabs.then(movedTabs => {
 
         // Filter duplicate and discardable tabs.
-        const unwantedTabs = tabsArray.filter(tab => {
-          tabProps = getTabProps(tab);
-          return tab.status === "complete" &&
-            (tabProps.isDiscardable || deduplicate && tabProps.isDuplicate)
-        });
+        const unwantedTabs = tabPropsArray.filter(tabProps =>
+          tabProps.status === "complete" &&
+            (tabProps.isDiscardable || deduplicate && tabProps.isDuplicate));
 
         // Check for discardable tabs.
-        const hasDiscardableTabs = tabsArray.some(tab => {
-          tabProps = getTabProps(tab);
-          return tab.status === "complete" && tabProps.isDiscardable;
-        });
+        const hasDiscardableTabs = tabPropsArray.some(tabProps =>
+          tabProps.status === "complete" && tabProps.isDiscardable);
 
         let gettingRemovedTabs;
 
@@ -199,7 +251,6 @@ function processTabs(windowId, sort, deduplicate) {
           // Clear the window's caches.
           hostnameTokenCache.get(windowId).clear();
           pathnameTokenCache.get(windowId).clear();
-          tabPropsCache.get(windowId).clear();
 
           // Allow the window's tabs to be sorted again.
           sortingWindows.delete(windowId);
@@ -211,68 +262,13 @@ function processTabs(windowId, sort, deduplicate) {
 
 
 /*
- * Gets certain properties of a tab.
- *
- * Tab properties are cached per-window for next access.
- *
- * @param tab           tab
- * @return              tab properties object
- */
-function getTabProps(tab) {
-
-  const {
-    id: tabId,
-    index: tabIndex,
-    windowId
-  } = tab;
-
-  const tabPropsMap = tabPropsCache.get(windowId);
-  let tabProps = tabPropsMap.get(tabId);
-
-  if (tabProps)
-    return tabProps;
-
-  const {
-    protocol = ':',
-    hostname = '',
-    pathname = '/',
-    searchParams = '',
-    hash = '#'
-  } = new URL(tab.url || '');
-
-  tabProps = {
-    hostname,
-    pathname,
-    searchParams: searchParams.toString(),
-    hash,
-    hasAboutScheme: protocol === "about",
-    hasPathname: pathname !== '/',
-    title: tab.title || '',
-    index: tabIndex,
-    isDiscardable: DISCARDABLE_TAB_URLS.has(tab.url),
-    isDuplicate: false
-  };
-
-  tabPropsMap.set(tabId, tabProps);
-
-  return tabProps;
-}
-
-
-/*
  * Compares tabs based on certain criteria.
  *
- * @param tabA          first tab for comparison
- * @param tabB          second tab for comparison
+ * @param propsA        first tab properties for comparison
+ * @param propsB        second tab properties for comparison
  * @return              comparison numeric result
  */
-function compareTabs(tabA, tabB) {
-
-  const propsA = getTabProps(tabA);
-  const propsB = getTabProps(tabB);
-
-  const windowIdA = tabA.windowId;
-  const windowIdB = tabB.windowId;
+function compareTabs(propsA, propsB) {
 
   // Map the string preference value to a number.
   let sortMode = SORT_MODES.get(PREFS.pref_tabSortByParts);
@@ -287,16 +283,13 @@ function compareTabs(tabA, tabB) {
       return result;
   }
 
-  // Split the hostname's TLD from its lower-level domains.
-  const [tldA, lowerDomainTokensA] = splitHostname(propsA.hostname, windowIdA);
-  const [tldB, lowerDomainTokensB] = splitHostname(propsB.hostname, windowIdB);
-
   // Compare hostnames.
-  if ((result = compareTokens(lowerDomainTokensA, lowerDomainTokensB)) !== 0)
+  if ((result =
+    compareTokens(propsA.lowerDomainTokens, propsB.lowerDomainTokens)) !== 0)
     return result;
 
   // Compare TLDs.
-  if ((result = compareTokens(tldA, tldB)) !== 0)
+  if ((result = compareTokens(propsA.tldTokens, propsB.tldTokens)) !== 0)
     return result;
 
   // Compare pathlessness.
@@ -309,16 +302,13 @@ function compareTabs(tabA, tabB) {
   }
 
   // Compare pathnames.
-  result = compareTokens(splitPathname(propsA.pathname, windowIdA),
-    splitPathname(propsB.pathname, windowIdB));
-
+  result = compareTokens(propsA.pathnameTokens, propsB.pathnameTokens);
   if (result !== 0)
     return result;
 
   // Compare search parameters.
-  if ((result = propsA.searchParams.localeCompare(propsB.searchParams)) !== 0) {
+  if ((result = propsA.searchParams.localeCompare(propsB.searchParams)) !== 0)
     return result;
-  }
 
   // Compare hashes (fragments).
   if ((result = propsA.hash.localeCompare(propsB.hash)) !== 0)
