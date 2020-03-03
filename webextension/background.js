@@ -288,8 +288,8 @@ function compareTabs(tabA, tabB) {
   }
 
   // Split the hostname's TLD from its lower-level domains.
-  const [lowerDomainTokensA, tldA] = splitHostname(propsA.hostname, windowIdA);
-  const [lowerDomainTokensB, tldB] = splitHostname(propsB.hostname, windowIdB);
+  const [tldA, lowerDomainTokensA] = splitHostname(propsA.hostname, windowIdA);
+  const [tldB, lowerDomainTokensB] = splitHostname(propsB.hostname, windowIdB);
 
   // Compare hostnames.
   if ((result = compareTokens(lowerDomainTokensA, lowerDomainTokensB)) !== 0)
@@ -381,7 +381,7 @@ function compareTokens(tokensA, tokensB) {
  *
  * @param hostname      URL hostname
  * @param windowId      ID of associated window
- * @return              [lower-level domain tokens, top-level domain tokens]
+ * @return              [top-level domain tokens, lower-level domain tokens]
  */
 function splitHostname(hostname, windowId) {
 
@@ -402,7 +402,7 @@ function splitHostname(hostname, windowId) {
     splitIndex = 1;
   }
 
-  hostnameTokens = [tokens.slice(splitIndex), tokens.slice(0, splitIndex)];
+  hostnameTokens = [tokens.slice(0, splitIndex), tokens.slice(splitIndex)];
 
   tokensMap.set(hostname, hostnameTokens);
 
