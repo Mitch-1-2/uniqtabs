@@ -1,15 +1,27 @@
 {
-  "browserAction_deduplicate_label": {
+  "browser_action_deduplicate_label": {
     "message": "Deduplicate tabs"
   },
-  "browserAction_none_label": {
+  "browser_action_none_label": {
     "message": "uniqtabs: Click to configure tab sorting"
   },
-  "browserAction_sort_deduplicate_label": {
+  "browser_action_sort_deduplicate_label": {
     "message": "Sort and deduplicate tabs"
   },
-  "browserAction_sort_label": {
+  "browser_action_sort_label": {
     "message": "Sort tabs"
+  },
+  "browser_action_shortcut_deduplicate_label": {
+    "message": "Currently set to: deduplicate tabs"
+  },
+  "browser_action_shortcut_none_label": {
+    "message": "Currently set to: configure tab sorting"
+  },
+  "browser_action_shortcut_sort_deduplicate_label": {
+    "message": "Currently set to: sort and deduplicate tabs"
+  },
+  "browser_action_shortcut_sort_label": {
+    "message": "Currently set to: sort tabs"
   },
   "options_ui_reset": {
     "message": "Reset"

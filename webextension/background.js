@@ -10,9 +10,15 @@
 // Set browser action.
 browser.browserAction.onClicked.addListener(onBrowserAction);
 
-// Set default browser action title.
+// Set browser action default title.
 browser.browserAction.setTitle({
-  title: browser.i18n.getMessage("browserAction_none_label")
+  title: browser.i18n.getMessage("browser_action_none_label")
+});
+
+// Set browser action default shortcut description.
+browser.commands.update({
+  name: "_execute_browser_action",
+  description: browser.i18n.getMessage("browser_action_shortcut_none_label")
 });
 
 // Listen to changes in storage.
@@ -138,27 +144,37 @@ function onStorageChanged(changes, areaName) {
   let deduplicate = PREFS.pref_tabDeduplicate === "true";
 
   // Default browser action title.
-  let titleMessageID = "browserAction_none_label";
+  let titleID = "browser_action_none_label";
+  let shortcutDescriptionID = "browser_action_shortcut_none_label";
 
   if (sort) {
     if (deduplicate) {
 
       // Sort and deduplicate.
-      titleMessageID = "browserAction_sort_deduplicate_label";
+      titleID = "browser_action_sort_deduplicate_label";
+      shortcutDescriptionID = "browser_action_shortcut_sort_deduplicate_label";
     } else {
 
       // Sort.
-      titleMessageID = "browserAction_sort_label";
+      titleID = "browser_action_sort_label";
+      shortcutDescriptionID = "browser_action_shortcut_sort_label";
     }
   } else if (deduplicate) {
 
     // Deduplicate.
-    titleMessageID = "browserAction_deduplicate_label";
+    titleID = "browser_action_deduplicate_label";
+    shortcutDescriptionID = "browser_action_deduplicate_label";
   }
 
   // Set browser action title.
   browser.browserAction.setTitle({
-    title: browser.i18n.getMessage(titleMessageID)
+    title: browser.i18n.getMessage(titleID)
+  });
+
+  // Set browser action shortcut description.
+  browser.commands.update({
+    name: "_execute_browser_action",
+    description: browser.i18n.getMessage(shortcutDescriptionID)
   });
 }
 
