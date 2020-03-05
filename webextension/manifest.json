@@ -28,8 +28,9 @@
 
   "commands": {
     "_execute_browser_action": {
+      "description": "Sort and/or deduplicate tabs",
       "suggested_key": {
-        "default": "Ctrl+Shift+D"
+        "default": "Ctrl+Shift+Space"
       }
     }
   },
