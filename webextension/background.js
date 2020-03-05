@@ -171,92 +171,71 @@ function onStorageChanged(changes, areaName) {
  * @param deduplicate   deduplicate tabs
  */
 function processTabs(windowId, sort, deduplicate) {
-  const gettingWindow = browser.windows.get(windowId, {
-    populate: true
-  });
 
-  gettingWindow.then(windowInfo => {
-    const gettingUnpinnedTabs = browser.tabs.query({
-      pinned: false,
-      windowId,
-    });
+  let tabPropsArray;
 
-    gettingUnpinnedTabs.then(unpinnedTabs => {
+  const gettingTabs = browser.tabs.query({
+    pinned: false,
+    windowId,
+  }).then(unpinnedTabs => {
 
-      // Check if window is already being sorted.
-      if (sortingWindows.has(windowId))
-        return;
+    // Check if window is already being sorted.
+    if (sortingWindows.has(windowId))
+      return;
 
-      sortingWindows.add(windowId);
+    sortingWindows.add(windowId);
 
-      // Initialise various caches for the window.
-      hostnameTokenCache.set(windowId, new Map());
-      pathnameTokenCache.set(windowId, new Map());
+    // Initialise various caches for the window.
+    hostnameTokenCache.set(windowId, new Map());
+    pathnameTokenCache.set(windowId, new Map());
 
-      // Get first tab index.
-      const {index} = unpinnedTabs[0];
+    tabPropsArray = unpinnedTabs.map(unpinnedTab => new TabProps(unpinnedTab));
 
-      const tabPropsArray =
-        unpinnedTabs.map(unpinnedTab => new TabProps(unpinnedTab));
+    // Get sorting order for tabs.
+    tabPropsArray.sort(compareTabs);
 
-      // Get sorting order for tabs.
-      tabPropsArray.sort(compareTabs);
+    if (!sort)
+      return;
 
-      let gettingMovedTabs;
+    // Get first tab index.
+    const {index} = unpinnedTabs[0];
 
-      if (sort) {
+    // Move tabs into place.
+    return browser.tabs.move(
+      tabPropsArray.map(tabProps => tabProps.id), { index });
+  }).then(() => {
 
-        // Move tabs into place.
-        gettingMovedTabs = browser.tabs.move(
-          tabPropsArray.map(tabProps => tabProps.id), {index: index});
-      } else {
+    // Filter duplicate and discardable tabs.
+    const unwantedTabs = tabPropsArray.filter(tabProps =>
+      tabProps.status === "complete" &&
+        (tabProps.isDiscardable || deduplicate && tabProps.isDuplicate));
 
-        // No-op.
-        gettingMovedTabs = new Promise((resolve, reject) => {
-          resolve(unpinnedTabs);
-        });
-      }
+    // Check for discardable tabs.
+    const hasDiscardableTabs = tabPropsArray.some(tabProps =>
+      tabProps.status === "complete" && tabProps.isDiscardable);
 
-      gettingMovedTabs.then(movedTabs => {
+    if (hasDiscardableTabs) {
 
-        // Filter duplicate and discardable tabs.
-        const unwantedTabs = tabPropsArray.filter(tabProps =>
-          tabProps.status === "complete" &&
-            (tabProps.isDiscardable || deduplicate && tabProps.isDuplicate));
-
-        // Check for discardable tabs.
-        const hasDiscardableTabs = tabPropsArray.some(tabProps =>
-          tabProps.status === "complete" && tabProps.isDiscardable);
-
-        let gettingRemovedTabs;
-
-        if (hasDiscardableTabs) {
-
-          // Create a new tab to remain after culling.
-          const gettingNewTab = browser.tabs.create({
-            active: false,
-            windowId: windowId
-          });
-
-          // Remove tabs.
-          gettingRemovedTabs = gettingNewTab.then(
-            browser.tabs.remove(unwantedTabs.map(tab => tab.id)));
-        } else {
-          gettingRemovedTabs = browser.tabs.remove(
-            unwantedTabs.map(tab => tab.id));
-        }
-
-        gettingRemovedTabs.then(removedTabs => {
-
-          // Clear the window's caches.
-          hostnameTokenCache.get(windowId).clear();
-          pathnameTokenCache.get(windowId).clear();
-
-          // Allow the window's tabs to be sorted again.
-          sortingWindows.delete(windowId);
-        });
+      // Create a new tab to remain after culling.
+      const gettingNewTab = browser.tabs.create({
+        active: false,
+        windowId: windowId
       });
-    });
+
+      // Remove tabs.
+      return gettingNewTab.then(
+        browser.tabs.remove(unwantedTabs.map(tab => tab.id)));
+    } else {
+      return browser.tabs.remove(unwantedTabs.map(tab => tab.id));
+    }
+  }).then(removedTabs => {
+
+    // Clear the window's caches.
+    hostnameTokenCache.get(windowId).clear();
+    pathnameTokenCache.get(windowId).clear();
+
+    // Allow the window's tabs to be sorted again.
+    sortingWindows.delete(windowId);
   });
 }
 
