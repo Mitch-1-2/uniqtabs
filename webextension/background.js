@@ -46,8 +46,7 @@ const DEFAULT_PREFS = {
 
 const PREFS = Object.assign(DEFAULT_PREFS);
 
-const cullingWindows = new Set();
-const sortingWindows = new Set();
+const processingWindows = new Set();
 
 const hostnameTokenCache = new Map();
 const pathnameTokenCache = new Map();
@@ -196,10 +195,10 @@ function processTabs(windowId, sort, deduplicate) {
   }).then(unpinnedTabs => {
 
     // Check if window is already being sorted.
-    if (sortingWindows.has(windowId))
+    if (processingWindows.has(windowId))
       return;
 
-    sortingWindows.add(windowId);
+    processingWindows.add(windowId);
 
     // Initialise various caches for the window.
     hostnameTokenCache.set(windowId, new Map());
@@ -251,7 +250,7 @@ function processTabs(windowId, sort, deduplicate) {
     pathnameTokenCache.get(windowId).clear();
 
     // Allow the window's tabs to be sorted again.
-    sortingWindows.delete(windowId);
+    processingWindows.delete(windowId);
   });
 }
 
