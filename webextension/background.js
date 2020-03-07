@@ -39,9 +39,9 @@ const SORT_MODES = new Map([
 ]);
 
 const DEFAULT_PREFS = {
-  "pref_tabDeduplicate": "false",
-  "pref_tabSortByParts": "none",
-  "pref_tabSortBySearchParams": "true"
+  "pref_tabs_deduplicate": "false",
+  "pref_tabs_sort_by_parts": "none",
+  "pref_tabs_sort_by_query_string": "true"
 };
 
 const PREFS = Object.assign(DEFAULT_PREFS);
@@ -76,7 +76,7 @@ function TabProps(tab) {
     isDiscardable: DISCARDABLE_TAB_URLS.has(url),
     isDuplicate: false,
     pathname,
-    searchParams: searchParams.toString(),
+    queryString: searchParams.toString(),
     status,
     tab,
     title: title || '',
@@ -115,8 +115,8 @@ TabProps.prototype = {
  * Called when the "browser action" is invoked.
  */
 function onBrowserAction(tab, onClickData) {
-  let sort = PREFS.pref_tabSortByParts !== "none";
-  let deduplicate = PREFS.pref_tabDeduplicate === "true";
+  const sort = PREFS.pref_tabs_sort_by_parts !== "none";
+  const deduplicate = PREFS.pref_tabs_deduplicate === "true";
 
   if (!sort && !deduplicate) {
 
@@ -300,9 +300,11 @@ function compareTabs(propsA, propsB) {
   if (result !== 0)
     return result;
 
-  // Compare search parameters.
-  if ((result = propsA.searchParams.localeCompare(propsB.searchParams)) !== 0)
-    return result;
+  // Compare query strings.
+  if (PREFS.pref_tabs_sort_by_query_string) {
+    if ((result = propsA.queryString.localeCompare(propsB.queryString)) !== 0)
+      return result;
+  }
 
   // Compare hashes (fragments).
   if ((result = propsA.hash.localeCompare(propsB.hash)) !== 0)

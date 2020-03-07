@@ -8,9 +8,9 @@
 
 
 const DEFAULT_PREFS = {
-  "pref_tabDeduplicate": "false",
-  "pref_tabSortByParts": "none",
-  "pref_tabSortBySearchParams": "true"
+  "pref_tabs_deduplicate": "false",
+  "pref_tabs_sort_by_parts": "none",
+  "pref_tabs_sort_by_query_string": "true"
 };
 
 

@@ -35,25 +35,25 @@
   "options_ui_submit_saved_label": {
     "message": "Options saved. \u2714"
   },
-  "pref_tabDeduplicate_label": {
+  "pref_tabs_deduplicate_label": {
     "message": "Deduplicate tabs on browser action"
   },
-  "pref_tabSortByParts_label": {
+  "pref_tabs_sort_by_parts_label": {
     "message": "Sort tabs by"
   },
-  "pref_tabSortByParts_option_0": {
+  "pref_tabs_sort_by_parts_option_0": {
     "message": "none (no sorting)"
   },
-  "pref_tabSortByParts_option_1": {
+  "pref_tabs_sort_by_parts_option_1": {
     "message": "URL host, title, URL path (recommended)"
   },
-  "pref_tabSortByParts_option_2": {
+  "pref_tabs_sort_by_parts_option_2": {
     "message": "URL host, URL path, title"
   },
-  "pref_tabSortByParts_option_3": {
+  "pref_tabs_sort_by_parts_option_3": {
     "message": "title, URL host, URL path"
   },
-  "pref_tabSortBySearchParams_label": {
-    "message": "Sort tabs by search parameters"
+  "pref_tabs_sort_by_query_string_label": {
+    "message": "Sort tabs by URL query string (e.g. ?video=123&autoplay=0)"
   }
 }
