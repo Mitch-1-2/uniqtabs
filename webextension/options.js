@@ -25,7 +25,8 @@ function saveOptions(e) {
     e.preventDefault();
 
   // Copy default preferences.
-  const prefs = Object.assign(DEFAULT_PREFS);
+  const prefs = {};
+  Object.assign(prefs, DEFAULT_PREFS);
 
   // Replace defaults with each user preference from the options page.
   for (let [id, value] of Object.entries(prefs)) {
@@ -142,7 +143,8 @@ function setOptionText() {
 function setInputValues(storedObject, setListeners) {
 
   // Merge default preferences with preferences from storage.
-  const prefs = Object.assign(DEFAULT_PREFS, storedObject.preferences);
+  const prefs = {};
+  Object.assign(prefs, DEFAULT_PREFS, storedObject.preferences);
 
   // Load preference values into the user interface.
   for (let [id, value] of Object.entries(prefs)) {

@@ -7,24 +7,6 @@
  */
 
 
-// Set browser action.
-browser.browserAction.onClicked.addListener(onBrowserAction);
-
-// Set browser action default title.
-browser.browserAction.setTitle({
-  title: browser.i18n.getMessage("browser_action_none_label")
-});
-
-// Set browser action default shortcut description.
-browser.commands.update({
-  name: "_execute_browser_action",
-  description: browser.i18n.getMessage("browser_action_shortcut_none_label")
-});
-
-// Listen to changes in storage.
-browser.storage.onChanged.addListener(onStorageChanged);
-
-
 const DISCARDABLE_TAB_URLS = new Set([
   "about:blank",
   "about:newtab",
@@ -45,6 +27,20 @@ const DEFAULT_PREFS = {
 };
 
 const PREFS = Object.assign(DEFAULT_PREFS);
+
+// Get "sync" storage contents.
+browser.storage.sync.get().then((storedObject) => {
+
+  // Merge preferences with preferences from storage.
+  Object.assign(PREFS, DEFAULT_PREFS, storedObject.preferences);
+  updateUI();
+});
+
+// Set browser action.
+browser.browserAction.onClicked.addListener(onBrowserAction);
+
+// Listen to changes in storage.
+browser.storage.onChanged.addListener(onStorageChanged);
 
 const processingWindows = new Set();
 
@@ -138,9 +134,16 @@ function onStorageChanged(changes, areaName) {
   }
 
   Object.assign(PREFS, changes.preferences.newValue);
+  updateUI();
+}
 
-  let sort = PREFS.pref_tabSortByParts !== "none";
-  let deduplicate = PREFS.pref_tabDeduplicate === "true";
+
+/*
+ * Updates UI elements such as titles and descriptions.
+ */
+function updateUI() {
+  let sort = PREFS.pref_tabs_sort_by_parts !== "none";
+  let deduplicate = PREFS.pref_tabs_deduplicate === "true";
 
   // Default browser action title.
   let titleID = "browser_action_none_label";
@@ -265,7 +268,7 @@ function processTabs(windowId, sort, deduplicate) {
 function compareTabs(propsA, propsB) {
 
   // Map the string preference value to a number.
-  let sortMode = SORT_MODES.get(PREFS.pref_tabSortByParts);
+  const sortMode = SORT_MODES.get(PREFS.pref_tabs_sort_by_parts);
   let result;
 
   if ((result = propsB.hasAboutScheme - propsA.hasAboutScheme) !== 0)
