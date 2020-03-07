@@ -67,7 +67,7 @@ function TabProps(tab) {
     _lowerDomainTokens: null,
     _pathnameTokens: null,
     _tldTokens: null,
-    hasAboutScheme: protocol === "about",
+    hasAboutScheme: protocol === "about:",
     hasPathname: pathname !== '/',
     hash,
     hostname,
@@ -266,11 +266,16 @@ function compareTabs(propsA, propsB) {
 
   // Map the string preference value to a number.
   let sortMode = SORT_MODES.get(PREFS.pref_tabSortByParts);
-
   let result;
 
-  if ((result = propsA.hasAboutScheme - propsB.hasAboutScheme) !== 0)
+  if ((result = propsB.hasAboutScheme - propsA.hasAboutScheme) !== 0)
     return result;
+
+  if (propsA.hasAboutScheme) { // Both tab URLs have "about:" schemes.
+
+    // Compare pathnames.
+    return propsA.pathname.localeCompare(propsB.pathname);
+  }
 
   if (sortMode === 3) { // title-host-path sorting. Compare titles.
     if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
