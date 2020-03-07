@@ -338,25 +338,17 @@ function compareTabs(propsA, propsB) {
  */
 function compareTokens(tokensA, tokensB) {
 
-  const tokensALength = tokensA.length;
-  const tokensBLength = tokensB.length;
+  const tokensLengthA = tokensA.length;
+  const tokensLengthB = tokensB.length;
+  const shortestLength = Math.min(tokensLengthA, tokensLengthB);
+  let result;
 
-  for (let tokenIndex = 0; ; ++tokenIndex) {
-    const isEndedA = tokenIndex >= tokensALength; // End of 'A' tokens.
-    const isEndedB = tokenIndex >= tokensBLength; // End of 'B' tokens.
-
-    if (isEndedA || isEndedB)
-      return isEndedB - isEndedA;
-
-    const tokenA = tokensA[tokenIndex];
-    const tokenB = tokensB[tokenIndex];
-    const result = tokenA.localeCompare(tokenB);
-
-    if (result !== 0)
-      return result;
+  for (let index = 0; index < shortestLength; ++index) {
+    if ((result = tokensA[index].localeCompare(tokensB[index])) !== 0)
+      break;
   }
 
-  return 0;
+  return result === 0 ? Math.sign(tokensLengthA - tokensLengthB) : result;
 }
 
 
