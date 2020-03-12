@@ -235,14 +235,10 @@ function processTabs(windowId, sort, deduplicate) {
     if (hasDiscardableTabs) {
 
       // Create a new tab to remain after culling.
-      const gettingNewTab = browser.tabs.create({
+      return browser.tabs.create({
         active: false,
         windowId: windowId
-      });
-
-      // Remove tabs.
-      return gettingNewTab.then(
-        browser.tabs.remove(unwantedTabs.map(tab => tab.id)));
+      }).then(browser.tabs.remove(unwantedTabs.map(tab => tab.id)));
     } else {
       return browser.tabs.remove(unwantedTabs.map(tab => tab.id));
     }
