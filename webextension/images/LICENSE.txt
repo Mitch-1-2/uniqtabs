@@ -1,0 +1,10 @@
+uniqtabs image assets are:
+• the sole property of Mitchell Field
+• authorised for use and distribution with unmodified (but otherwise Mozilla Public License 2.0 compliant) copies of uniqtabs
+• authorised for "fair use" purposes such as critical review of uniqtabs
+• not authorised for use in derivative works
+• not authorised for redistribution.
+
+Simply put, the branding of uniqtabs is proprietary and not covered by the Mozilla Public License 2.0.
+
+License conditions do not override local, state, federal laws in applicable jurisdictions.

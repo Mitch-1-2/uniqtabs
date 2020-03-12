@@ -1,7 +1,10 @@
 {
   "default_locale": "en",
   "manifest_version": 2,
-  "name": "uniqtabs",
+  "author": "Mitchell Field",
+  "description": "Sorts tabs and removes duplicates.",
+  "name": "uniqtabs (Unique Tabs)",
+  "short_name": "uniqtabs",
   "version": "0.30.1",
 
   "applications": {
@@ -33,6 +36,16 @@
         "default": "Ctrl+Shift+Space"
       }
     }
+  },
+
+  "icons": {
+    "16": "images/icon-016.png",
+    "24": "images/icon-024.png",
+    "32": "images/icon-032.png",
+    "48": "images/icon-048.png",
+    "64": "images/icon-064.png",
+    "96": "images/icon-096.png",
+    "128": "images/icon-128.png"
   },
 
   "options_ui": {
