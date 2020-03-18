@@ -1,4 +1,10 @@
 {
+  "extension_description": {
+    "message": "Sorts tabs and removes duplicates."
+  },
+  "browser_action_default_label": {
+    "message": "uniqtabs: Sort tabs and/or remove duplicates."
+  },
   "browser_action_deduplicate_label": {
     "message": "Deduplicate tabs"
   },
