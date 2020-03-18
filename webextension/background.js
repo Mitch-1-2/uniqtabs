@@ -49,7 +49,7 @@ const pathnameTokenCache = new Map();
 
 
 function TabProps(tab) {
-  const { id, index, status, title, url, windowId } = tab;
+  const { active, id, index, status, title, url, windowId } = tab;
 
   const {
     protocol = ':',
@@ -69,6 +69,7 @@ function TabProps(tab) {
     hostname,
     id,
     index,
+    isActive: active,
     isDiscardable: DISCARDABLE_TAB_URLS.has(url),
     isDuplicate: false,
     pathname,
@@ -319,8 +320,9 @@ function compareTabs(propsA, propsB) {
       return result;
   }
 
-  // The two tabs are considered duplicate. Mark the later tab as a duplicate.
-  if (propsA.index < propsB.index) {
+  // The two tabs are considered duplicate at this point.
+  // If one of them is active, mark the other as the duplicate.
+  if (propsA.isActive || !propsB.isActive && propsA.index < propsB.index) {
     propsB.isDuplicate = true;
   } else {
     propsA.isDuplicate = true;
