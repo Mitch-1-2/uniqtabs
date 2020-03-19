@@ -6,8 +6,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-
-const DISCARDABLE_TAB_URLS = new Set([
+// URLs of pages with state that isn't important enough to keep.
+// Considered blank.
+const BLANK_TAB_URLS = new Set([
   "about:blank",
   "about:newtab",
   "about:privatebrowsing"
@@ -70,7 +71,7 @@ function TabProps(tab) {
     id,
     index,
     isActive: active,
-    isDiscardable: DISCARDABLE_TAB_URLS.has(url),
+    isBlank: BLANK_TAB_URLS.has(url),
     isDuplicate: false,
     pathname,
     queryString: searchParams.toString(),
@@ -224,16 +225,16 @@ function processTabs(windowId, sort, deduplicate) {
       tabPropsArray.map(tabProps => tabProps.id), { index });
   }).then(() => {
 
-    // Filter duplicate and discardable tabs.
+    // Filter duplicate and blank tabs.
     const unwantedTabs = tabPropsArray.filter(tabProps =>
       tabProps.status === "complete" &&
-        (tabProps.isDiscardable || deduplicate && tabProps.isDuplicate));
+        (tabProps.isBlank || deduplicate && tabProps.isDuplicate));
 
-    // Check for discardable tabs.
-    const hasDiscardableTabs = tabPropsArray.some(tabProps =>
-      tabProps.status === "complete" && tabProps.isDiscardable);
+    // Check for blank tabs.
+    const hasBlankTabs = tabPropsArray.some(tabProps =>
+      tabProps.status === "complete" && tabProps.isBlank);
 
-    if (hasDiscardableTabs) {
+    if (hasBlankTabs) {
 
       // Create a new tab to remain after culling.
       return browser.tabs.create({
