@@ -1,3 +1,3 @@
-uniqtabs
+uniqtabs (Unique Tabs)
 =============
-This Firefox add-on sorts tabs and prevents tab duplicates.
+This Firefox add-on sorts and de-duplicates tabs.
