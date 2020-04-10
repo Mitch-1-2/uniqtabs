@@ -11,7 +11,8 @@
 const BLANK_TAB_URLS = new Set([
   "about:blank",
   "about:newtab",
-  "about:privatebrowsing"
+  "about:privatebrowsing",
+  "chrome://newtab/"
 ]);
 
 const SORT_MODES = new Map([
@@ -64,7 +65,7 @@ function TabProps(tab) {
     _lowerDomainTokens: null,
     _pathnameTokens: null,
     _tldTokens: null,
-    hasAboutScheme: protocol === "about:",
+    hasHTTPScheme: protocol === "https:" || protocol === "http:",
     hasPathname: pathname !== '/',
     hash,
     hostname,
@@ -75,6 +76,7 @@ function TabProps(tab) {
     isDuplicate: false,
     pathname,
     queryString: searchParams.toString(),
+    scheme: protocol,
     status,
     tab,
     title: title || '',
@@ -269,13 +271,11 @@ function compareTabs(propsA, propsB) {
   const sortMode = SORT_MODES.get(PREFS.pref_tabs_sort_by_parts);
   let result;
 
-  if ((result = propsB.hasAboutScheme - propsA.hasAboutScheme) !== 0)
-    return result;
-
-  if (propsA.hasAboutScheme) { // Both tab URLs have "about:" schemes.
-
-    // Compare pathnames.
-    return propsA.pathname.localeCompare(propsB.pathname);
+  // Compare schemes.
+  if (!propsA.hasHTTPScheme || !propsB.hasHTTPScheme) {
+    if ((result = propsA.scheme.localeCompare(propsB.scheme)) !== 0) {
+      return result;
+    }
   }
 
   if (sortMode === 3) { // title-host-path sorting. Compare titles.
