@@ -178,10 +178,12 @@ function updateUI() {
   });
 
   // Set browser action shortcut description.
-  browser.commands.update({
-    name: "_execute_browser_action",
-    description: browser.i18n.getMessage(shortcutDescriptionID)
-  });
+  if ("update" in browser.commands) {
+    browser.commands.update({
+      name: "_execute_browser_action",
+      description: browser.i18n.getMessage(shortcutDescriptionID)
+    });
+  }
 }
 
 
