@@ -220,6 +220,9 @@ function processTabs(windowId, sort, deduplicate) {
         new Error(browser.i18n.getMessage("error_tabs_none")));
     }
 
+    // Get first tab index.
+    ({ index } = unpinnedTabs[0]);
+
     hostnameTokenCache.set(windowId, new Map());
     pathnameTokenCache.set(windowId, new Map());
 
@@ -230,9 +233,6 @@ function processTabs(windowId, sort, deduplicate) {
 
     if (!sort)
       return Promise.resolve();
-
-    // Get first tab index.
-    ({ index } = unpinnedTabs[0]);
 
     // Move tabs into place.
     return browser.tabs.move(
