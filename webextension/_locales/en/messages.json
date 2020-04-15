@@ -29,6 +29,12 @@
   "browser_action_shortcut_sort_label": {
     "message": "Currently set to: sort tabs"
   },
+  "error_tabs_none": {
+    "message": "uniqtabs: no unpinned tabs to process"
+  },
+  "error_window_already_processing": {
+    "message": "uniqtabs: window is already being processed"
+  },
   "options_ui_reset": {
     "message": "Reset"
   },

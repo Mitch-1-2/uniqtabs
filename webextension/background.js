@@ -196,37 +196,45 @@ function updateUI() {
  */
 function processTabs(windowId, sort, deduplicate) {
 
-  let tabPropsArray;
+  let index;
+  let isProcessing = false;
+  let tabPropsArray = [];
 
   const gettingTabs = browser.tabs.query({
     pinned: false,
     windowId,
   }).then(unpinnedTabs => {
-
-    // Check if window is already being sorted.
-    if (processingWindows.has(windowId))
-      return;
-
+    if (processingWindows.has(windowId)) {
+      return Promise.reject(
+        new Error(browser.i18n.getMessage("error_window_already_processing")));
+    }
     processingWindows.add(windowId);
+    isProcessing = true;
 
-    // Initialise various caches for the window.
+    if (!unpinnedTabs || unpinnedTabs.length === 0) {
+      return Promise.reject(
+        new Error(browser.i18n.getMessage("error_tabs_none")));
+    }
+
     hostnameTokenCache.set(windowId, new Map());
     pathnameTokenCache.set(windowId, new Map());
 
     tabPropsArray = unpinnedTabs.map(unpinnedTab => new TabProps(unpinnedTab));
 
-    // Get sorting order for tabs.
+    // Get sorting order for tabs. Duplicates are identified in the process.
     tabPropsArray.sort(compareTabs);
 
     if (!sort)
-      return;
+      return Promise.resolve();
 
     // Get first tab index.
-    const {index} = unpinnedTabs[0];
+    ({ index } = unpinnedTabs[0]);
 
     // Move tabs into place.
     return browser.tabs.move(
       tabPropsArray.map(tabProps => tabProps.id), { index });
+  }, err => {
+    return Promise.reject(err);
   }).then(() => {
 
     // Filter duplicate and blank tabs.
@@ -238,23 +246,37 @@ function processTabs(windowId, sort, deduplicate) {
     const hasBlankTabs = tabPropsArray.some(tabProps =>
       tabProps.status === "complete" && tabProps.isBlank);
 
-    if (hasBlankTabs) {
+    if (index === 0 && tabPropsArray.length === unwantedTabs.length) {
 
       // Create a new tab to remain after culling.
       return browser.tabs.create({
         active: false,
         windowId: windowId
-      }).then(browser.tabs.remove(unwantedTabs.map(tab => tab.id)));
+      }).finally(browser.tabs.remove(unwantedTabs.map(tab => tab.id)));
     } else {
       return browser.tabs.remove(unwantedTabs.map(tab => tab.id));
     }
-  }).then(removedTabs => {
+  }, err => {
+    return Promise.reject(err);
+  }).catch(err => {
 
-    // Clear the window's caches.
-    hostnameTokenCache.get(windowId).clear();
-    pathnameTokenCache.get(windowId).clear();
+    // Error caught. Do nothing.
+  }).finally(() => {
+    if (!isProcessing)
+      return;
 
-    // Allow the window's tabs to be sorted again.
+    tabPropsArray.length = 0;
+
+    const windowHostnameTokenCache = hostnameTokenCache.get(windowId);
+    if (windowHostnameTokenCache) {
+      windowHostnameTokenCache.clear();
+      hostnameTokenCache.delete(windowId);
+    }
+    const windowPathnameTokenCache = pathnameTokenCache.get(windowId);
+    if (windowPathnameTokenCache) {
+      windowPathnameTokenCache.clear();
+      pathnameTokenCache.delete(windowId);
+    }
     processingWindows.delete(windowId);
   });
 }
