@@ -51,6 +51,7 @@ const pathnameTokenCache = new Map();
 
 
 function TabProps(tab) {
+  "use strict";
   const { active, id, index, status, title, url, windowId } = tab;
 
   const {
@@ -115,6 +116,7 @@ TabProps.prototype = {
  * Called when the "browser action" is invoked.
  */
 function onBrowserAction(tab, onClickData) {
+  "use strict";
   const sort = PREFS.pref_tabs_sort_by_parts !== "none";
   const deduplicate = PREFS.pref_tabs_deduplicate === "true";
 
@@ -133,6 +135,7 @@ function onBrowserAction(tab, onClickData) {
  * Called when a storage area is changed.
  */
 function onStorageChanged(changes, areaName) {
+  "use strict";
   if (areaName !== "sync" || !("preferences" in changes)) {
     return;
   }
@@ -146,6 +149,7 @@ function onStorageChanged(changes, areaName) {
  * Updates UI elements such as titles and descriptions.
  */
 function updateUI() {
+  "use strict";
   let sort = PREFS.pref_tabs_sort_by_parts !== "none";
   let deduplicate = PREFS.pref_tabs_deduplicate === "true";
 
@@ -195,7 +199,7 @@ function updateUI() {
  * @param deduplicate   deduplicate tabs
  */
 function processTabs(windowId, sort, deduplicate) {
-
+  "use strict";
   let index;
   let isProcessing = false;
   let tabPropsArray = [];
@@ -290,6 +294,7 @@ function processTabs(windowId, sort, deduplicate) {
  * @return              comparison numeric result
  */
 function compareTabs(propsA, propsB) {
+  "use strict";
 
   // Map the string preference value to a number.
   const sortMode = SORT_MODES.get(PREFS.pref_tabs_sort_by_parts);
@@ -368,7 +373,7 @@ function compareTabs(propsA, propsB) {
  * @return              comparison numeric result
  */
 function compareTokens(tokensA, tokensB) {
-
+  "use strict";
   const tokensLengthA = tokensA.length;
   const tokensLengthB = tokensB.length;
   const shortestLength = Math.min(tokensLengthA, tokensLengthB);
@@ -393,7 +398,7 @@ function compareTokens(tokensA, tokensB) {
  * @return              [top-level domain tokens, lower-level domain tokens]
  */
 function splitHostname(hostname, windowId) {
-
+  "use strict";
   const tokensMap = hostnameTokenCache.get(windowId);
   let hostnameTokens = tokensMap.get(hostname);
 
@@ -420,7 +425,7 @@ function splitHostname(hostname, windowId) {
  * @return              [pathname tokens]
  */
 function splitPathname(pathname, windowId) {
-
+  "use strict";
   const tokensMap = pathnameTokenCache.get(windowId);
   let pathnameTokens = tokensMap.get(pathname);
 
