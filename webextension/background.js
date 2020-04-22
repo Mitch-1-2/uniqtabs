@@ -31,11 +31,11 @@ const DEFAULT_PREFS = {
 const PREFS = Object.assign(DEFAULT_PREFS);
 
 // Get "sync" storage contents.
-browser.storage.sync.get().then((storedObject) => {
+browser.storage.sync.get().then(async storedObject => {
 
   // Merge preferences with preferences from storage.
   Object.assign(PREFS, DEFAULT_PREFS, storedObject.preferences);
-  updateUI();
+  return updateUI();
 });
 
 // Set browser action.
@@ -44,71 +44,123 @@ browser.browserAction.onClicked.addListener(onBrowserAction);
 // Listen to changes in storage.
 browser.storage.onChanged.addListener(onStorageChanged);
 
-const processingWindows = new Set();
 
-const hostnameTokenCache = new Map();
-const pathnameTokenCache = new Map();
+class TabProps {
+  constructor(tab, windowProps) {
+    const { active, id, index, status, title, url, windowId } = tab;
 
+    const {
+      protocol = ":",
+      hostname = "",
+      pathname = '/',
+      searchParams = "",
+      hash = "#"
+    } = new URL(url || "");
 
-function TabProps(tab) {
-  "use strict";
-  const { active, id, index, status, title, url, windowId } = tab;
+    Object.assign(this, {
+      _lowerDomainTokens: null,
+      _pathnameTokens: null,
+      _tldTokens: null,
+      hasHTTPScheme: protocol === "https:" || protocol === "http:",
+      hasPathname: pathname !== "/",
+      hash,
+      hostname,
+      id,
+      index,
+      isActive: active,
+      isBlank: BLANK_TAB_URLS.has(url),
+      isDuplicate: false,
+      pathname,
+      queryString: searchParams.toString(),
+      scheme: protocol,
+      status,
+      tab,
+      title: title || "",
+      url,
+      windowId,
+      windowProps
+    });
+  }
 
-  const {
-    protocol = ':',
-    hostname = '',
-    pathname = '/',
-    searchParams = '',
-    hash = '#'
-  } = new URL(url || '');
-
-  Object.assign(this, {
-    _lowerDomainTokens: null,
-    _pathnameTokens: null,
-    _tldTokens: null,
-    hasHTTPScheme: protocol === "https:" || protocol === "http:",
-    hasPathname: pathname !== '/',
-    hash,
-    hostname,
-    id,
-    index,
-    isActive: active,
-    isBlank: BLANK_TAB_URLS.has(url),
-    isDuplicate: false,
-    pathname,
-    queryString: searchParams.toString(),
-    scheme: protocol,
-    status,
-    tab,
-    title: title || '',
-    url,
-    windowId
-  });
-}
-
-TabProps.prototype = {
   get lowerDomainTokens() {
     if (!this._lowerDomainTokens) {
-      const hostnameTokens = splitHostname(this.hostname, this.windowId);
+      const hostnameTokens = this.windowProps.getHostnameTokens(this.hostname);
       this._tldTokens = hostnameTokens[0];
       this._lowerDomainTokens = hostnameTokens[1];
     }
     return this._lowerDomainTokens;
-  },
+  }
+
   get pathnameTokens() {
     if (!this._pathnameTokens) {
-      this._pathnameTokens = splitPathname(this.pathname, this.windowId);
+      this._pathnameTokens = this.windowProps.getPathnameTokens(this.pathname);
     }
     return this._pathnameTokens;
-  },
+  }
+
   get tldTokens() {
     if (!this._tldTokens) {
-      const hostnameTokens = splitHostname(this.hostname, this.windowId);
+      const hostnameTokens = this.windowProps.getHostnameTokens(this.hostname);
       this._tldTokens = hostnameTokens[0];
       this._lowerDomainTokens = hostnameTokens[1];
     }
     return this._tldTokens;
   }
+}
+
+
+class WindowProps {
+  constructor(windowId) {
+    WindowProps.windows.add(windowId);
+    this.windowId = windowId;
+    this.hostnameTokenCache = new Map();
+    this.pathnameTokenCache = new Map();
+  }
+
+  /*
+   * Roughly split hostname into top-level and lower-level domain tokens.
+   *
+   * @param hostname      hostname
+   * @return              [top-level domain tokens, lower-level domain tokens]
+   */
+  getHostnameTokens(hostname) {
+    let hostnameTokens = this.hostnameTokenCache.get(hostname);
+    if (!hostnameTokens) {
+      const tokens = hostname.split('.').reverse();
+      const splitIndex = (tokens.length > 2 && tokens[1].length <= 3) ? 2 : 1;
+      hostnameTokens = [tokens.slice(0, splitIndex), tokens.slice(splitIndex)];
+      this.hostnameTokenCache.set(hostname, hostnameTokens);
+    }
+    return hostnameTokens;
+  }
+
+  /*
+   * Split pathname into tokens.
+   *
+   * @param hostname      pathname
+   * @return              [pathname tokens]
+   */
+  getPathnameTokens(pathname) {
+    let pathnameTokens = this.pathnameTokenCache.get(pathname);
+    if (!pathnameTokens) {
+      pathnameTokens = pathname.split("/");
+      this.pathnameTokenCache.set(pathname, pathnameTokens);
+    }
+    return pathnameTokens;
+  }
+
+  clear() {
+    this.hostnameTokenCache.clear();
+    this.pathnameTokenCache.clear();
+    WindowProps.windows.delete(this.windowId);
+  }
+}
+
+WindowProps.windows = new Set();
+
+WindowProps.hasWindowById = function(windowId) {
+  "use strict";
+  return WindowProps.windows.has(windowId);
 }
 
 
@@ -123,25 +175,23 @@ function onBrowserAction(tab, onClickData) {
   if (!sort && !deduplicate) {
 
     // The browser action is not configured to sort nor deduplicate tabs.
-    browser.runtime.openOptionsPage();
-    return;
+    return browser.runtime.openOptionsPage();
   }
-
-  processTabs(tab.windowId, sort, deduplicate);
+  return processTabs(tab.windowId, sort, deduplicate);
 }
 
 
 /*
  * Called when a storage area is changed.
  */
-function onStorageChanged(changes, areaName) {
+async function onStorageChanged(changes, areaName) {
   "use strict";
   if (areaName !== "sync" || !("preferences" in changes)) {
     return;
   }
 
   Object.assign(PREFS, changes.preferences.newValue);
-  updateUI();
+  return updateUI();
 }
 
 
@@ -198,23 +248,21 @@ function updateUI() {
  * @param sort          sort tabs
  * @param deduplicate   deduplicate tabs
  */
-function processTabs(windowId, sort, deduplicate) {
+async function processTabs(windowId, sort, deduplicate) {
   "use strict";
   let index;
   let isProcessing = false;
   let tabPropsArray = [];
 
-  const gettingTabs = browser.tabs.query({
+  if (WindowProps.hasWindowById(windowId))
+    return Promise.resolve();
+
+  const windowProps = new WindowProps(windowId);
+
+  return browser.tabs.query({
     pinned: false,
     windowId,
   }).then(unpinnedTabs => {
-    if (processingWindows.has(windowId)) {
-      return Promise.reject(
-        new Error(browser.i18n.getMessage("error_window_already_processing")));
-    }
-    processingWindows.add(windowId);
-    isProcessing = true;
-
     if (!unpinnedTabs || unpinnedTabs.length === 0) {
       return Promise.reject(
         new Error(browser.i18n.getMessage("error_tabs_none")));
@@ -223,10 +271,8 @@ function processTabs(windowId, sort, deduplicate) {
     // Get first tab index.
     ({ index } = unpinnedTabs[0]);
 
-    hostnameTokenCache.set(windowId, new Map());
-    pathnameTokenCache.set(windowId, new Map());
-
-    tabPropsArray = unpinnedTabs.map(unpinnedTab => new TabProps(unpinnedTab));
+    tabPropsArray = unpinnedTabs.map(
+      unpinnedTab => new TabProps(unpinnedTab, windowProps));
 
     // Get sorting order for tabs. Duplicates are identified in the process.
     tabPropsArray.sort(compareTabs);
@@ -266,22 +312,9 @@ function processTabs(windowId, sort, deduplicate) {
 
     // Error caught. Do nothing.
   }).finally(() => {
-    if (!isProcessing)
-      return;
-
     tabPropsArray.length = 0;
-
-    const windowHostnameTokenCache = hostnameTokenCache.get(windowId);
-    if (windowHostnameTokenCache) {
-      windowHostnameTokenCache.clear();
-      hostnameTokenCache.delete(windowId);
-    }
-    const windowPathnameTokenCache = pathnameTokenCache.get(windowId);
-    if (windowPathnameTokenCache) {
-      windowPathnameTokenCache.clear();
-      pathnameTokenCache.delete(windowId);
-    }
-    processingWindows.delete(windowId);
+    windowProps.clear();
+    return Promise.resolve();
   });
 }
 
@@ -385,56 +418,4 @@ function compareTokens(tokensA, tokensB) {
   }
 
   return result === 0 ? Math.sign(tokensLengthA - tokensLengthB) : result;
-}
-
-
-/*
- * Roughly split hostname into top-level and lower-level domains.
- *
- * Will set/get cache entries by hostname and window ID.
- *
- * @param hostname      URL hostname
- * @param windowId      ID of associated window
- * @return              [top-level domain tokens, lower-level domain tokens]
- */
-function splitHostname(hostname, windowId) {
-  "use strict";
-  const tokensMap = hostnameTokenCache.get(windowId);
-  let hostnameTokens = tokensMap.get(hostname);
-
-  if (hostnameTokens)
-    return hostnameTokens;
-
-  const tokens = hostname.split('.').reverse();
-  const tokensLength = tokens.length;
-  const splitIndex = (tokensLength > 2 && tokens[1].length <= 3) ? 2 : 1;
-  hostnameTokens = [tokens.slice(0, splitIndex), tokens.slice(splitIndex)];
-  tokensMap.set(hostname, hostnameTokens);
-
-  return hostnameTokens;
-}
-
-
-/*
- * Split pathname into tokens.
- *
- * Will set/get cache entries by pathname and window ID.
- *
- * @param hostname      URL pathname
- * @param windowId      ID of associated window
- * @return              [pathname tokens]
- */
-function splitPathname(pathname, windowId) {
-  "use strict";
-  const tokensMap = pathnameTokenCache.get(windowId);
-  let pathnameTokens = tokensMap.get(pathname);
-
-  if (pathnameTokens)
-    return pathnameTokens;
-
-  pathnameTokens = pathname.split('/');
-
-  tokensMap.set(pathname, pathnameTokens);
-
-  return pathnameTokens;
 }
