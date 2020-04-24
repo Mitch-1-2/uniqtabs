@@ -1,4 +1,5 @@
 /*
+ * @file                Background script.
  * @author              Mitchell Field <mitchell.field@live.com.au>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -22,19 +23,13 @@ const SORT_MODES = new Map([
   ["title_host_path", 3]
 ]);
 
-const DEFAULT_PREFS = {
-  "pref_tabs_deduplicate": "false",
-  "pref_tabs_sort_by_parts": "none",
-  "pref_tabs_sort_by_query_string": "true"
-};
-
-const PREFS = Object.assign(DEFAULT_PREFS);
+const PREFS = Object.assign(PREFS_DEFAULT);
 
 // Get "sync" storage contents.
 browser.storage.sync.get().then(async storedObject => {
 
   // Merge preferences with preferences from storage.
-  Object.assign(PREFS, DEFAULT_PREFS, storedObject.preferences);
+  Object.assign(PREFS, PREFS_DEFAULT, storedObject.preferences);
   return updateUI();
 });
 

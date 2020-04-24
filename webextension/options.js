@@ -1,17 +1,11 @@
 /*
+ * @file                Options script.
  * @author              Mitchell Field <mitchell.field@live.com.au>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-
-
-const DEFAULT_PREFS = {
-  "pref_tabs_deduplicate": "false",
-  "pref_tabs_sort_by_parts": "none",
-  "pref_tabs_sort_by_query_string": "true"
-};
 
 
 /*
@@ -26,7 +20,7 @@ function saveOptions(e) {
 
   // Copy default preferences.
   const prefs = {};
-  Object.assign(prefs, DEFAULT_PREFS);
+  Object.assign(prefs, PREFS_DEFAULT);
 
   // Replace defaults with each user preference from the options page.
   for (let [id, value] of Object.entries(prefs)) {
@@ -104,7 +98,7 @@ function setLabelText() {
   for (const labelNode of labelNodes) {
     const id = labelNode.getAttribute("for");
 
-    if (id && (id in DEFAULT_PREFS)) {
+    if (id && (id in PREFS_DEFAULT)) {
       labelNode.innerText = browser.i18n.getMessage(id + "_label");
     }
   }
@@ -124,7 +118,7 @@ function setOptionText() {
     let optionIndex = 0;
 
     for (const optionNode of selectNode.children) {
-      if (id && (id in DEFAULT_PREFS)) {
+      if (id && (id in PREFS_DEFAULT)) {
         optionNode.innerText =
           browser.i18n.getMessage(id + "_option_" + optionIndex);
       }
@@ -144,7 +138,7 @@ function setInputValues(storedObject, setListeners) {
 
   // Merge default preferences with preferences from storage.
   const prefs = {};
-  Object.assign(prefs, DEFAULT_PREFS, storedObject.preferences);
+  Object.assign(prefs, PREFS_DEFAULT, storedObject.preferences);
 
   // Load preference values into the user interface.
   for (let [id, value] of Object.entries(prefs)) {
