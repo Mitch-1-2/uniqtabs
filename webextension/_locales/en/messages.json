@@ -50,6 +50,9 @@
   "pref_tabs_deduplicate_label": {
     "message": "Deduplicate tabs on browser action"
   },
+  "pref_tabs_sort_by_container_label": {
+    "message": "Sort tabs by container"
+  },
   "pref_tabs_sort_by_parts_label": {
     "message": "Sort tabs by"
   },

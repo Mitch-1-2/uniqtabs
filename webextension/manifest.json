@@ -13,11 +13,6 @@
     }
   },
 
-  "permissions": [
-    "storage",
-    "tabs"
-  ],
-
   "background": {
     "scripts": [
       "browser-polyfill.js",
@@ -54,5 +49,12 @@
     "browser_style": true,
     "page": "options.html",
     "open_in_tab": false
-  }
+  },
+
+  "permissions": [
+    "contextualIdentities",
+    "cookies",
+    "storage",
+    "tabs"
+  ]
 }

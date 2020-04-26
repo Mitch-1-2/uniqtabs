@@ -41,8 +41,17 @@ browser.storage.onChanged.addListener(onStorageChanged);
 
 
 class TabProps {
-  constructor(tab, windowProps) {
-    const { active, id, index, status, title, url, windowId } = tab;
+  constructor(tab, windowProps, containers) {
+    const {
+      active,
+      cookieStoreId = null,
+      id,
+      index,
+      status,
+      title,
+      url,
+      windowId
+    } = tab;
 
     const {
       protocol = ":",
@@ -56,6 +65,8 @@ class TabProps {
       _lowerDomainTokens: null,
       _pathnameTokens: null,
       _tldTokens: null,
+      containerIndex: containers && cookieStoreId !== null ?
+        containers.get(cookieStoreId) ?? -1 : -1,
       hasHTTPScheme: protocol === "https:" || protocol === "http:",
       hasPathname: pathname !== "/",
       hash,
@@ -257,7 +268,7 @@ async function processTabs(windowId, sort, deduplicate) {
   return browser.tabs.query({
     pinned: false,
     windowId,
-  }).then(unpinnedTabs => {
+  }).then(async unpinnedTabs => {
     if (!unpinnedTabs || unpinnedTabs.length === 0) {
       return Promise.reject(
         new Error(browser.i18n.getMessage("error_tabs_none")));
@@ -266,8 +277,18 @@ async function processTabs(windowId, sort, deduplicate) {
     // Get first tab index.
     ({ index } = unpinnedTabs[0]);
 
+    let containers = null;
+
+    if ("contextualIdentities" in browser) {
+      try {
+        const containersArray = await browser.contextualIdentities.query({});
+        containers = new Map(
+          containersArray.map((c, index) => [c.cookieStoreId, index]));
+      } catch (err) {}
+    };
+
     tabPropsArray = unpinnedTabs.map(
-      unpinnedTab => new TabProps(unpinnedTab, windowProps));
+      unpinnedTab => new TabProps(unpinnedTab, windowProps, containers));
 
     // Get sorting order for tabs. Duplicates are identified in the process.
     tabPropsArray.sort(compareTabs);
@@ -327,6 +348,11 @@ function compareTabs(propsA, propsB) {
   // Map the string preference value to a number.
   const sortMode = SORT_MODES.get(PREFS.pref_tabs_sort_by_parts);
   let result;
+
+  // Compare containers.
+  if ((result = propsA.containerIndex - propsB.containerIndex) !== 0) {
+    return result;
+  }
 
   // Compare schemes.
   if (!propsA.hasHTTPScheme || !propsB.hasHTTPScheme) {
