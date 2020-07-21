@@ -23,16 +23,21 @@ function saveOptions(e) {
   Object.assign(prefs, PREFS_DEFAULT);
 
   // Replace defaults with each user preference from the options page.
-  for (let [id, value] of Object.entries(prefs)) {
+  for (let [name, value] of Object.entries(prefs)) {
 
-    const element = document.getElementById(id);
-    const tagName = element.tagName;
-    const type = element.type || '';
+    const elements = document.querySelectorAll(`input[name="${name}"]`);
+    for (let element of elements) {
+      let tagName = element.tagName;
+      let type = element.type || "";
 
-    if (tagName === "INPUT" && type === "checkbox") {
-      prefs[id] = element.checked.toString();
-    } else {
-      prefs[id] = element.value.toString();
+      if ("INPUT" && type === "checkbox") {
+        prefs[name] = element.checked.toString();
+      } else if (type === "radio") {
+        if (element.checked)
+          prefs[name] = element.value.toString();
+      } else {
+        prefs[name] = element.value.toString();
+      }
     }
   }
 
@@ -93,14 +98,18 @@ function setButtonText() {
  * Sets the label text for the options page.
  */
 function setLabelText() {
-  const labelNodes = document.getElementsByTagName("label");
+  const labelNodes = document.querySelectorAll("label,legend");
 
   for (const labelNode of labelNodes) {
-    const id = labelNode.getAttribute("for");
-
-    if (id && (id in PREFS_DEFAULT)) {
-      labelNode.innerText = browser.i18n.getMessage(id + "_label");
+    const tagName = labelNode.tagName.toLowerCase();
+    let id = labelNode.id;
+    if (tagName === "label") {
+      if (id !== "")
+        continue;
+      id = labelNode.getAttribute("for") + "_label";
     }
+
+    labelNode.innerText = browser.i18n.getMessage(id);
   }
 }
 
@@ -141,20 +150,22 @@ function setInputValues(storedObject, setListeners) {
   Object.assign(prefs, PREFS_DEFAULT, storedObject.preferences);
 
   // Load preference values into the user interface.
-  for (let [id, value] of Object.entries(prefs)) {
+  for (let [name, value] of Object.entries(prefs)) {
 
-    const element = document.getElementById(id);
-    const tagName = element.tagName;
-    const type = element.type;
-
-    if (tagName === "INPUT" && type === "checkbox") {
-      element.checked = value === "true" ? "checked": false;
-    } else {
-      element.value = value;
-    }
-
-    if (setListeners) {
-      element.addEventListener("change", setSavedStateLabel);
+    const elements = document.querySelectorAll(`input[name="${name}"]`);
+    for (let element of elements) {
+      let tagName = element.tagName;
+      let type = element.type;
+      if (tagName === "INPUT" && type === "checkbox") {
+        element.checked = value === "true" ? "checked": false;
+      } else if (type === "radio") {
+        element.checked = value === element.value ? "checked": false;
+      } else {
+        element.value = value;
+      }
+      if (setListeners) {
+        element.addEventListener("change", setSavedStateLabel);
+      }
     }
   }
 }

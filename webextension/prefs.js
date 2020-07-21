@@ -8,8 +8,11 @@
  */
 
 const PREFS_DEFAULT = {
-  "pref_tabs_deduplicate": "false",
+  "pref_tabs_deduplicate_on_browser_action": "false",
+  "pref_tabs_deduplicate_on_update": "false",
   "pref_tabs_sort_by_container": "true",
   "pref_tabs_sort_by_parts": "none",
-  "pref_tabs_sort_by_query_string": "true"
+  "pref_tabs_sort_by_query_string": "true",
+  "pref_tabs_sort_on_browser_action": "false",
+  "pref_tabs_sort_on_update": "false"
 };

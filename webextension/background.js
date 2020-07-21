@@ -39,6 +39,9 @@ browser.browserAction.onClicked.addListener(onBrowserAction);
 // Listen to changes in storage.
 browser.storage.onChanged.addListener(onStorageChanged);
 
+// Listen for tab updates.
+browser.tabs.onUpdated.addListener(onTabUpdated);
+
 
 class TabProps {
   constructor(tab, windowProps, containers) {
@@ -175,15 +178,16 @@ WindowProps.hasWindowById = function(windowId) {
  */
 function onBrowserAction(tab, onClickData) {
   "use strict";
-  const sort = PREFS.pref_tabs_sort_by_parts !== "none";
-  const deduplicate = PREFS.pref_tabs_deduplicate === "true";
+  const sort = PREFS.pref_tabs_sort_on_browser_action === "true" &&
+    (PREFS.pref_tabs_sort_by_container === "true" ||
+    PREFS.pref_tabs_sort_by_parts !== "none");
+  const deduplicate = PREFS.pref_tabs_deduplicate_on_browser_action === "true";
 
-  if (!sort && !deduplicate) {
+  if (sort || deduplicate)
+    return processTabs(tab.windowId, sort, deduplicate);
 
-    // The browser action is not configured to sort nor deduplicate tabs.
-    return browser.runtime.openOptionsPage();
-  }
-  return processTabs(tab.windowId, sort, deduplicate);
+  // The browser action is not configured to sort nor deduplicate tabs.
+  return browser.runtime.openOptionsPage();
 }
 
 
@@ -201,13 +205,29 @@ async function onStorageChanged(changes, areaName) {
 }
 
 
+function onTabUpdated(tabId, changeInfo, tab) {
+  "use strict";
+  const sort = PREFS.pref_tabs_sort_on_update === "true" &&
+    (PREFS.pref_tabs_sort_by_container === "true" ||
+    PREFS.pref_tabs_sort_by_parts !== "none");
+  const deduplicate = PREFS.pref_tabs_deduplicate_on_update === "true";
+
+  if (changeInfo.status !== "complete" || !changeInfo.status) {
+    return;
+  }
+
+  if (sort || deduplicate)
+    return processTabs(tab.windowId, sort, deduplicate);
+}
+
+
 /*
  * Updates UI elements such as titles and descriptions.
  */
 function updateUI() {
   "use strict";
-  let sort = PREFS.pref_tabs_sort_by_parts !== "none";
-  let deduplicate = PREFS.pref_tabs_deduplicate === "true";
+  const sort = PREFS.pref_tabs_sort_on_browser_action === "true";
+  const deduplicate = PREFS.pref_tabs_deduplicate_on_browser_action === "true";
 
   // Default browser action title.
   let titleID = "browser_action_none_label";

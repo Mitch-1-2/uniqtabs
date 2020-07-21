@@ -16,31 +16,79 @@
     <title>uniqtabs (Unique Tabs) options</title>
   </head>
   <body>
-    <div>
+    <div class="browser-style">
       <form id="form">
+        <fieldset>
+        <legend id="fieldset_sorting_legend"></legend>
         <div class="browser-style">
           <label for="pref_tabs_sort_by_parts"></label>
-          <select id="pref_tabs_sort_by_parts" class="browser-style">
-            <option value="none">&nbsp;</option>
-            <option value="host_title_path">&nbsp;</option>
-            <option value="host_path_title">&nbsp;</option>
-            <option value="title_host_path">&nbsp;</option>
-          </select>
+          <br/>
+          <input id="pref_tabs_sort_by_parts_option_0"
+            name="pref_tabs_sort_by_parts"
+            type="radio"
+            value="none"
+            checked="checked"/>
+          <label for="pref_tabs_sort_by_parts_option_0"></label>
+          <br/>
+          <input id="pref_tabs_sort_by_parts_option_1"
+            name="pref_tabs_sort_by_parts"
+            type="radio"
+            value="host_title_path"/>
+          <label for="pref_tabs_sort_by_parts_option_1"></label>
+          <br/>
+          <input id="pref_tabs_sort_by_parts_option_2"
+            name="pref_tabs_sort_by_parts"
+            type="radio"
+            value="host_path_title"/>
+          <label for="pref_tabs_sort_by_parts_option_2"></label>
+          <br/>
+          <input id="pref_tabs_sort_by_parts_option_3"
+            name="pref_tabs_sort_by_parts"
+            type="radio"
+            value="title_host_path"/>
+          <label for="pref_tabs_sort_by_parts_option_3"></label>
         </div>
         <div class="browser-style">
-          <input id="pref_tabs_sort_by_container" type="checkbox"
-            checked="checked"/>
+          <input id="pref_tabs_sort_by_container"
+            name="pref_tabs_sort_by_container"
+            type="checkbox" checked="checked"/>
             <label for="pref_tabs_sort_by_container"></label>
         </div>
         <div class="browser-style">
-          <input id="pref_tabs_sort_by_query_string" type="checkbox"
+          <input id="pref_tabs_sort_by_query_string"
+            name="pref_tabs_sort_by_query_string"
+            type="checkbox"
             checked="checked"/>
             <label for="pref_tabs_sort_by_query_string"></label>
         </div>
         <div class="browser-style">
-          <input id="pref_tabs_deduplicate" type="checkbox"/>
-            <label for="pref_tabs_deduplicate"></label>
+          <input id="pref_tabs_sort_on_browser_action"
+            name="pref_tabs_sort_on_browser_action"
+            type="checkbox"/>
+            <label for="pref_tabs_sort_on_browser_action"></label>
         </div>
+        <div class="browser-style">
+          <input id="pref_tabs_sort_on_update"
+            name="pref_tabs_sort_on_update"
+            type="checkbox"/>
+            <label for="pref_tabs_sort_on_update"></label>
+        </div>
+        </fieldset>
+        <fieldset>
+        <legend id="fieldset_deduplicating_legend"></legend>
+        <div class="browser-style">
+          <input id="pref_tabs_deduplicate_on_browser_action"
+            name="pref_tabs_deduplicate_on_browser_action" type="checkbox"/>
+            <label for="pref_tabs_deduplicate_on_browser_action"></label>
+        </div>
+        <div class="browser-style">
+          <input id="pref_tabs_deduplicate_on_update"
+            name="pref_tabs_deduplicate_on_update"
+            type="checkbox"/>
+            <label for="pref_tabs_deduplicate_on_update"></label>
+        </div>
+        </fieldset>
+        <br/>
         <div class="browser-style">
           <button id="reset" type="reset" class="browser-style"></button>
           <button id="submit" type="submit" class="browser-style"></button>

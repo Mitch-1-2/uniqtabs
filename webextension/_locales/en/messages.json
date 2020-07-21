@@ -35,6 +35,12 @@
   "error_window_already_processing": {
     "message": "uniqtabs: window is already being processed"
   },
+  "fieldset_deduplicating_legend": {
+    "message": "Deduplicating"
+  },
+  "fieldset_sorting_legend": {
+    "message": "Sorting"
+  },
   "options_ui_reset": {
     "message": "Reset"
   },
@@ -47,8 +53,11 @@
   "options_ui_submit_saved_label": {
     "message": "Options saved. \u2714"
   },
-  "pref_tabs_deduplicate_label": {
+  "pref_tabs_deduplicate_on_browser_action_label": {
     "message": "Deduplicate tabs on browser action"
+  },
+  "pref_tabs_deduplicate_on_update_label": {
+    "message": "Deduplicate tabs on tab update"
   },
   "pref_tabs_sort_by_container_label": {
     "message": "Sort tabs by container"
@@ -56,19 +65,25 @@
   "pref_tabs_sort_by_parts_label": {
     "message": "Sort tabs by"
   },
-  "pref_tabs_sort_by_parts_option_0": {
+  "pref_tabs_sort_by_parts_option_0_label": {
     "message": "none (no sorting)"
   },
-  "pref_tabs_sort_by_parts_option_1": {
+  "pref_tabs_sort_by_parts_option_1_label": {
     "message": "URL host, title, URL path (recommended)"
   },
-  "pref_tabs_sort_by_parts_option_2": {
+  "pref_tabs_sort_by_parts_option_2_label": {
     "message": "URL host, URL path, title"
   },
-  "pref_tabs_sort_by_parts_option_3": {
+  "pref_tabs_sort_by_parts_option_3_label": {
     "message": "title, URL host, URL path"
   },
   "pref_tabs_sort_by_query_string_label": {
     "message": "Sort tabs by URL query string (e.g. ?video=123&autoplay=0)"
+  },
+  "pref_tabs_sort_on_browser_action_label": {
+    "message": "Sort tabs on browser action"
+  },
+  "pref_tabs_sort_on_update_label": {
+    "message": "Sort tabs on tab update"
   }
 }
