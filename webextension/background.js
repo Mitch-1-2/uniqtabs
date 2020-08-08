@@ -277,7 +277,6 @@ function updateUI() {
 async function processTabs(windowId, sort, deduplicate) {
   "use strict";
   let index;
-  let isProcessing = false;
   let tabPropsArray = [];
 
   if (WindowProps.hasWindowById(windowId))
@@ -310,27 +309,33 @@ async function processTabs(windowId, sort, deduplicate) {
     tabPropsArray = unpinnedTabs.map(
       unpinnedTab => new TabProps(unpinnedTab, windowProps, containers));
 
-    // Get sorting order for tabs. Duplicates are identified in the process.
-    tabPropsArray.sort(compareTabs);
-
     if (!sort)
       return Promise.resolve();
 
-    // Move tabs into place.
+    // Sort and move tabs into place.
     return browser.tabs.move(
-      tabPropsArray.map(tabProps => tabProps.id), { index });
+      tabPropsArray.sort(compareTabsOrder).map(tabProps => tabProps.id),
+      { index }
+    );
   }, err => {
     return Promise.reject(err);
   }).then(() => {
 
+    // Detect duplicate tabs.
+    if (deduplicate) {
+      let tabPropsA = null;
+      tabPropsArray.sort(compareTabsSimilarity).forEach(tabPropsB => {
+        if (tabPropsA && compareTabsSimilarity(tabPropsA, tabPropsB) === 0)
+          tabPropsA.isDuplicate = true;
+        tabPropsA = tabPropsB;
+      });
+    }
+
     // Filter duplicate and blank tabs.
     const unwantedTabs = tabPropsArray.filter(tabProps =>
       tabProps.status === "complete" &&
-        (tabProps.isBlank || deduplicate && tabProps.isDuplicate));
-
-    // Check for blank tabs.
-    const hasBlankTabs = tabPropsArray.some(tabProps =>
-      tabProps.status === "complete" && tabProps.isBlank);
+        (tabProps.isBlank || deduplicate && tabProps.isDuplicate)
+    );
 
     if (index === 0 && tabPropsArray.length === unwantedTabs.length) {
 
@@ -356,83 +361,61 @@ async function processTabs(windowId, sort, deduplicate) {
 
 
 /*
- * Compares tabs based on certain criteria.
+ * Compares tabs to determine order.
  *
- * @param propsA        first tab properties for comparison
- * @param propsB        second tab properties for comparison
- * @return              comparison numeric result
+ * @param propsA        first tab properties
+ * @param propsB        second tab properties
+ * @return              numeric result
  */
-function compareTabs(propsA, propsB) {
+function compareTabsOrder(propsA, propsB) {
   "use strict";
+
+  const containerDiff = propsA.containerIndex - propsB.containerIndex;
+  if (PREFS.pref_tabs_sort_by_container === "true" && containerDiff !== 0)
+    return containerDiff;
 
   // Map the string preference value to a number.
   const sortMode = SORT_MODES.get(PREFS.pref_tabs_sort_by_parts);
-  let result;
+  if (sortMode === 0)
+    return 0;
 
-  // Compare containers.
-  if ((result = propsA.containerIndex - propsB.containerIndex) !== 0) {
-    return result;
-  }
+  const titleDiff = propsA.title.localeCompare(propsB.title);
 
-  // Compare schemes.
-  if (!propsA.hasHTTPScheme || !propsB.hasHTTPScheme) {
-    if ((result = propsA.scheme.localeCompare(propsB.scheme)) !== 0) {
-      return result;
-    }
-  }
+  return (sortMode === 3 ? titleDiff : 0) || // title-host-path
+    (propsA.hasHTTPScheme && propsB.hasHTTPScheme ?
+      0 : propsA.scheme.localeCompare(propsB.scheme)) ||
+    compareTokens(propsA.lowerDomainTokens, propsB.lowerDomainTokens) ||
+    compareTokens(propsA.tldTokens, propsB.tldTokens) ||
+    (propsA.hasPathname - propsB.hasPathname) ||
+    (sortMode === 1 ? titleDiff : 0) || // host-title-path
+    compareTokens(propsA.pathnameTokens, propsB.pathnameTokens) ||
+    (PREFS.pref_tabs_sort_by_query_string === "true" ?
+      propsA.queryString.localeCompare(propsB.queryString) : 0) ||
+    propsA.hash.localeCompare(propsB.hash) ||
+    (sortMode === 2 ? titleDiff : 0); // host-path-title
+}
 
-  if (sortMode === 3) { // title-host-path sorting. Compare titles.
-    if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
-      return result;
-  }
 
-  // Compare hostnames.
-  if ((result =
-    compareTokens(propsA.lowerDomainTokens, propsB.lowerDomainTokens)) !== 0)
-    return result;
+/*
+ * Compares tabs to determine similarity.
+ *
+ * @param propsA        first tab properties
+ * @param propsB        second tab properties
+ * @return              numeric result
+ */
+function compareTabsSimilarity(propsA, propsB) {
+  "use strict";
 
-  // Compare TLDs.
-  if ((result = compareTokens(propsA.tldTokens, propsB.tldTokens)) !== 0)
-    return result;
-
-  // Compare pathlessness.
-  if ((result = propsA.hasPathname - propsB.hasPathname) !== 0)
-    return result;
-
-  if (sortMode === 1) { // host-title-path sorting. Compare titles.
-    if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
-      return result;
-  }
-
-  // Compare pathnames.
-  result = compareTokens(propsA.pathnameTokens, propsB.pathnameTokens);
-  if (result !== 0)
-    return result;
-
-  // Compare query strings.
-  if (PREFS.pref_tabs_sort_by_query_string) {
-    if ((result = propsA.queryString.localeCompare(propsB.queryString)) !== 0)
-      return result;
-  }
-
-  // Compare hashes (fragments).
-  if ((result = propsA.hash.localeCompare(propsB.hash)) !== 0)
-    return result;
-
-  if (sortMode === 2) { // host-path-title. Compare titles.
-    if ((result = propsA.title.localeCompare(propsB.title)) !== 0)
-      return result;
-  }
-
-  // The two tabs are considered duplicate at this point.
-  // If one of them is active, mark the other as the duplicate.
-  if (propsA.isActive || !propsB.isActive && propsA.index < propsB.index) {
-    propsB.isDuplicate = true;
-  } else {
-    propsA.isDuplicate = true;
-  }
-
-  return 0;
+  return (propsA.containerIndex - propsB.containerIndex) ||
+    (!propsA.hasHTTPScheme || !propsB.hasHTTPScheme ?
+      propsA.scheme.localeCompare(propsB.scheme) : 0) ||
+    compareTokens(propsA.lowerDomainTokens, propsB.lowerDomainTokens) ||
+    compareTokens(propsA.tldTokens, propsB.tldTokens) ||
+    (propsA.hasPathname - propsB.hasPathname) ||
+    compareTokens(propsA.pathnameTokens, propsB.pathnameTokens) ||
+    propsA.queryString.localeCompare(propsB.queryString) ||
+    propsA.hash.localeCompare(propsB.hash) ||
+    propsA.title.localeCompare(propsB.title);
 }
 
 
