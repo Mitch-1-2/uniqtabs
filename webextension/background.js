@@ -434,12 +434,12 @@ function compareTokens(tokensA, tokensB) {
   const tokensLengthA = tokensA.length;
   const tokensLengthB = tokensB.length;
   const shortestLength = Math.min(tokensLengthA, tokensLengthB);
-  let result = 0;
 
   for (let index = 0; index < shortestLength; ++index) {
-    if ((result = tokensA[index].localeCompare(tokensB[index])) !== 0)
-      break;
+    let result = tokensA[index].localeCompare(tokensB[index]);
+    if (result)
+      return result;
   }
 
-  return result === 0 ? Math.sign(tokensLengthA - tokensLengthB) : result;
+  return tokensLengthA - tokensLengthB;
 }
