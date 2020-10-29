@@ -44,7 +44,7 @@ browser.tabs.onUpdated.addListener(onTabUpdated);
 
 
 class TabProps {
-  constructor(tab, windowProps, containers) {
+  constructor(tab, windowProps, containers, sortMode) {
     const {
       active,
       cookieStoreId = null,
@@ -82,6 +82,7 @@ class TabProps {
       pathname,
       queryString: searchParams.toString(),
       scheme: protocol,
+      sortMode,
       status,
       tab,
       title: title || "",
@@ -178,13 +179,14 @@ WindowProps.hasWindowById = function(windowId) {
  */
 function onBrowserAction(tab, onClickData) {
   "use strict";
-  const sort = PREFS.pref_tabs_sort_on_browser_action === "true" &&
-    (PREFS.pref_tabs_sort_by_container === "true" ||
-    PREFS.pref_tabs_sort_by_parts !== "none");
-  const deduplicate = PREFS.pref_tabs_deduplicate_on_browser_action === "true";
+  const prefs = Object.assign({}, PREFS);
+  const sort = prefs.pref_tabs_sort_on_browser_action === "true" &&
+    (prefs.pref_tabs_sort_by_container === "true" ||
+    prefs.pref_tabs_sort_by_parts !== "none");
+  const deduplicate = prefs.pref_tabs_deduplicate_on_browser_action === "true";
 
   if (sort || deduplicate)
-    return processTabs(tab.windowId, sort, deduplicate);
+    return processTabs(tab.windowId, sort, deduplicate, prefs);
 
   // The browser action is not configured to sort nor deduplicate tabs.
   return browser.runtime.openOptionsPage();
@@ -207,17 +209,18 @@ async function onStorageChanged(changes, areaName) {
 
 function onTabUpdated(tabId, changeInfo, tab) {
   "use strict";
-  const sort = PREFS.pref_tabs_sort_on_update === "true" &&
-    (PREFS.pref_tabs_sort_by_container === "true" ||
-    PREFS.pref_tabs_sort_by_parts !== "none");
-  const deduplicate = PREFS.pref_tabs_deduplicate_on_update === "true";
+  const prefs = Object.assign({}, PREFS);
+  const sort = prefs.pref_tabs_sort_on_update === "true" &&
+    (prefs.pref_tabs_sort_by_container === "true" ||
+    prefs.pref_tabs_sort_by_parts !== "none");
+  const deduplicate = prefs.pref_tabs_deduplicate_on_update === "true";
 
   if (changeInfo.status !== "complete" || !changeInfo.status) {
     return;
   }
 
   if (sort || deduplicate)
-    return processTabs(tab.windowId, sort, deduplicate);
+    return processTabs(tab.windowId, sort, deduplicate, prefs);
 }
 
 
@@ -273,8 +276,9 @@ function updateUI() {
  * @param windowId      window ID
  * @param sort          sort tabs
  * @param deduplicate   deduplicate tabs
+ * @param prefs         preferences
  */
-async function processTabs(windowId, sort, deduplicate) {
+async function processTabs(windowId, sort, deduplicate, prefs) {
   "use strict";
   let index;
   let tabPropsArray = [];
@@ -298,16 +302,20 @@ async function processTabs(windowId, sort, deduplicate) {
 
     let containers = null;
 
-    if ("contextualIdentities" in browser) {
+    if (("contextualIdentities" in browser) && prefs.pref_tabs_sort_by_container === "true") {
       try {
         const containersArray = await browser.contextualIdentities.query({});
         containers = new Map(
-          containersArray.map((c, index) => [c.cookieStoreId, index]));
+          containersArray.map((c, index) => [c.cookieStoreId, index])
+        );
       } catch (err) {}
     };
 
+    const sortMode = SORT_MODES.get(prefs.pref_tabs_sort_by_parts);
+
     tabPropsArray = unpinnedTabs.map(
-      unpinnedTab => new TabProps(unpinnedTab, windowProps, containers));
+      unpinnedTab => new TabProps(unpinnedTab, windowProps, containers, sortMode)
+    );
 
     if (!sort)
       return Promise.resolve();
@@ -371,11 +379,10 @@ function compareTabsOrder(propsA, propsB) {
   "use strict";
 
   const containerDiff = propsA.containerIndex - propsB.containerIndex;
-  if (PREFS.pref_tabs_sort_by_container === "true" && containerDiff !== 0)
+  if (containerDiff)
     return containerDiff;
 
-  // Map the string preference value to a number.
-  const sortMode = SORT_MODES.get(PREFS.pref_tabs_sort_by_parts);
+  const sortMode = propsA.sortMode;
   if (sortMode === 0)
     return 0;
 
