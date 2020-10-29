@@ -68,8 +68,7 @@ class TabProps {
       _lowerDomainTokens: null,
       _pathnameTokens: null,
       _tldTokens: null,
-      containerIndex: containers && cookieStoreId !== null ?
-        containers.get(cookieStoreId) ?? -1 : -1,
+      containerIndex: containers && containers.get(cookieStoreId) || -1,
       hasHTTPScheme: protocol === "https:" || protocol === "http:",
       hasPathname: pathname !== "/",
       hash,
