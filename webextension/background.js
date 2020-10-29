@@ -386,20 +386,18 @@ function compareTabsOrder(propsA, propsB) {
   if (sortMode === 0)
     return 0;
 
-  const titleDiff = propsA.title.localeCompare(propsB.title);
-
-  return (sortMode === 3 ? titleDiff : 0) || // title-host-path
+  return (sortMode === 3 ? propsA.title.localeCompare(propsB.title) : 0) || // title-host-path
     (propsA.hasHTTPScheme && propsB.hasHTTPScheme ?
       0 : propsA.scheme.localeCompare(propsB.scheme)) ||
     compareTokens(propsA.lowerDomainTokens, propsB.lowerDomainTokens) ||
     compareTokens(propsA.tldTokens, propsB.tldTokens) ||
     (propsA.hasPathname - propsB.hasPathname) ||
-    (sortMode === 1 ? titleDiff : 0) || // host-title-path
+    (sortMode === 1 ? propsA.title.localeCompare(propsB.title) : 0) || // host-title-path
     compareTokens(propsA.pathnameTokens, propsB.pathnameTokens) ||
     (PREFS.pref_tabs_sort_by_query_string === "true" ?
       propsA.queryString.localeCompare(propsB.queryString) : 0) ||
     propsA.hash.localeCompare(propsB.hash) ||
-    (sortMode === 2 ? titleDiff : 0); // host-path-title
+    (sortMode === 2 ? propsA.title.localeCompare(propsB.title) : 0); // host-path-title
 }
 
 
