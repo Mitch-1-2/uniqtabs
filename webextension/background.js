@@ -435,6 +435,9 @@ function compareTabsSimilarity(propsA, propsB) {
  */
 function compareTokens(tokensA, tokensB) {
   "use strict";
+  if (tokensA === tokensB)
+    return 0;
+
   const tokensLengthA = tokensA.length;
   const tokensLengthB = tokensB.length;
   const shortestLength = Math.min(tokensLengthA, tokensLengthB);
