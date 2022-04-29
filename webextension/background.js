@@ -59,10 +59,12 @@ class TabProps {
     const {
       protocol = ":",
       hostname = "",
-      pathname = '/',
+      pathname = "",
       searchParams = "",
       hash = "#"
     } = new URL(url || "");
+
+    const pathnameTrimmed = pathname.replace(/^\/|\/$/g, ""); // trim slashes
 
     Object.assign(this, {
       _lowerDomainTokens: null,
@@ -70,7 +72,7 @@ class TabProps {
       _tldTokens: null,
       containerIndex: containers && containers.get(cookieStoreId) || -1,
       hasHTTPScheme: protocol === "https:" || protocol === "http:",
-      hasPathname: pathname !== "/",
+      hasPathname: pathnameTrimmed !== "",
       hash,
       hostname,
       id,
@@ -78,7 +80,7 @@ class TabProps {
       isActive: active,
       isBlank: BLANK_TAB_URLS.has(url),
       isDuplicate: false,
-      pathname,
+      pathname: pathnameTrimmed,
       queryString: searchParams.toString(),
       scheme: protocol,
       sortMode,
