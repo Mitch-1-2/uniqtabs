@@ -20,7 +20,8 @@ const SORT_MODES = new Map([
   ["none", 0],
   ["host_title_path", 1],
   ["host_path_title", 2],
-  ["title_host_path", 3]
+  ["title_host_path", 3],
+  ["auto", 4]
 ]);
 
 const PREFS = Object.assign(PREFS_DEFAULT);
@@ -69,6 +70,7 @@ class TabProps {
     Object.assign(this, {
       _lowerDomainTokens: null,
       _pathnameTokens: null,
+      _maybeSlug: null,
       _tldTokens: null,
       containerIndex: containers && containers.get(cookieStoreId) || -1,
       hasHTTPScheme: protocol === "https:" || protocol === "http:",
@@ -107,6 +109,18 @@ class TabProps {
       this._pathnameTokens = this.windowProps.getPathnameTokens(this.pathname);
     }
     return this._pathnameTokens;
+  }
+
+  get maybeSlug() {
+    if (this._maybeSlug === null) {
+      const pathEnd = this.pathnameTokens.at(-1);
+      const titleSlugged = this.title.replace(/ /g,"_").toLocaleLowerCase().replace(/\W/g, "");
+
+      // First character of path end matches the first character of slugged title.
+      // Naively presume that the path end is a slug.
+      this._maybeSlug = pathEnd.charAt(0) === titleSlugged.charAt(0) ? pathEnd : "";
+    }
+    return this._maybeSlug;
   }
 
   get tldTokens() {
@@ -393,12 +407,59 @@ function compareTabsOrder(propsA, propsB) {
     compareTokens(propsA.lowerDomainTokens, propsB.lowerDomainTokens) ||
     compareTokens(propsA.tldTokens, propsB.tldTokens) ||
     (propsA.hasPathname - propsB.hasPathname) ||
+    (sortMode === 4 ? compareTabsOrderAuto(propsA, propsB) : 0) || // auto
     (sortMode === 1 ? propsA.title.localeCompare(propsB.title) : 0) || // host-title-path
     compareTokens(propsA.pathnameTokens, propsB.pathnameTokens) ||
     (PREFS.pref_tabs_sort_by_query_string === "true" ?
       propsA.queryString.localeCompare(propsB.queryString) : 0) ||
     propsA.hash.localeCompare(propsB.hash) ||
     (sortMode === 2 ? propsA.title.localeCompare(propsB.title) : 0); // host-path-title
+}
+
+
+/*
+ * Compares tabs to heuristically determine order.
+ *
+ * @param propsA        first tab properties
+ * @param propsB        second tab properties
+ * @return              numeric result
+ */
+function compareTabsOrderAuto(propsA, propsB) {
+  "use strict";
+
+  const tokensA = propsA.pathnameTokens;
+  const tokensB = propsB.pathnameTokens;
+  const tokensLengthA = tokensA.length;
+  const tokensLengthB = tokensB.length;
+  const tokensLengthDiff = tokensLengthA - tokensLengthB;
+  const shortestLength = Math.min(tokensLengthA, tokensLengthB);
+
+  let result = 0;
+  let subIndex = 0;
+
+  for (let index = 0; index < shortestLength; ++index) {
+    if ((result = tokensA[index].localeCompare(tokensB[index]))) {
+      subIndex = index;
+      break;
+    }
+  }
+
+  if (tokensLengthDiff)
+    return result || tokensLengthDiff; // Path lengths are different.
+
+  if (result !== 0 && shortestLength > 0 && subIndex > 1) {
+    const maybeSlugA = propsA.maybeSlug;
+    const maybeSlugB = propsB.maybeSlug;
+
+    // Paths differ but share at least two leading tokens. Do slug matching.
+    if (maybeSlugA === "" || maybeSlugB === "") {
+      result = propsA.title.localeCompare(propsB.title);
+    } else {
+      result = maybeSlugA.localeCompare(maybeSlugB);
+    }
+  }
+
+  return result;
 }
 
 
