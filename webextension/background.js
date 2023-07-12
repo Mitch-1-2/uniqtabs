@@ -447,7 +447,9 @@ function compareTabsOrderAuto(propsA, propsB) {
   if (tokensLengthDiff)
     return result || tokensLengthDiff; // Path lengths are different.
 
-  if (result !== 0 && shortestLength > 0 && subIndex > 1) {
+  if (result === 0) {
+    result = propsA.title.localeCompare(propsB.title);
+  } else if (shortestLength > 0 && subIndex > 1) {
     const maybeSlugA = propsA.maybeSlug;
     const maybeSlugB = propsB.maybeSlug;
 
