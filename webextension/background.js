@@ -45,7 +45,7 @@ browser.tabs.onUpdated.addListener(onTabUpdated);
 
 
 class TabProps {
-  constructor(tab, windowProps, containers, sortMode) {
+  constructor(tab, windowProps, containers, sortPrefs) {
     const {
       active,
       cookieStoreId = null,
@@ -67,6 +67,11 @@ class TabProps {
 
     const pathnameTrimmed = pathname.replace(/^\/|\/$/g, ""); // trim slashes
 
+    const {
+      sortMode,
+      sortByQueryString
+    } = sortPrefs;
+
     Object.assign(this, {
       _lowerDomainTokens: null,
       _pathnameTokens: null,
@@ -83,7 +88,7 @@ class TabProps {
       isBlank: BLANK_TAB_URLS.has(url),
       isDuplicate: false,
       pathname: pathnameTrimmed,
-      queryString: searchParams.toString(),
+      queryString: sortByQueryString ? searchParams.toString() : "",
       scheme: protocol,
       sortMode,
       status,
@@ -326,10 +331,13 @@ async function processTabs(windowId, sort, deduplicate, prefs) {
       } catch (err) {}
     };
 
-    const sortMode = SORT_MODES.get(prefs.pref_tabs_sort_by_parts);
+    const sortPrefs = {
+      sortMode: SORT_MODES.get(prefs.pref_tabs_sort_by_parts),
+      sortByQueryString: prefs.pref_tabs_sort_by_query_string === "true"
+    }
 
     tabPropsArray = unpinnedTabs.map(
-      unpinnedTab => new TabProps(unpinnedTab, windowProps, containers, sortMode)
+      unpinnedTab => new TabProps(unpinnedTab, windowProps, containers, sortPrefs)
     );
 
     if (!sort)
@@ -410,8 +418,7 @@ function compareTabsOrder(propsA, propsB) {
     (sortMode === 4 ? compareTabsOrderAuto(propsA, propsB) : 0) || // auto
     (sortMode === 1 ? propsA.title.localeCompare(propsB.title) : 0) || // host-title-path
     compareTokens(propsA.pathnameTokens, propsB.pathnameTokens) ||
-    (PREFS.pref_tabs_sort_by_query_string === "true" ?
-      propsA.queryString.localeCompare(propsB.queryString) : 0) ||
+    propsA.queryString.localeCompare(propsB.queryString) ||
     propsA.hash.localeCompare(propsB.hash) ||
     (sortMode === 2 ? propsA.title.localeCompare(propsB.title) : 0); // host-path-title
 }
