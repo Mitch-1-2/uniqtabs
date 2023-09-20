@@ -66,6 +66,8 @@ class TabProps {
     } = new URL(url || "");
 
     const pathnameTrimmed = pathname.replace(/^\/|\/$/g, ""); // trim slashes
+    const hasPathname = pathnameTrimmed !== "";
+    const containerIndex = containers && containers.get(cookieStoreId) || -1;
 
     const {
       sortMode,
@@ -77,9 +79,6 @@ class TabProps {
       _pathnameTokens: null,
       _maybeSlug: null,
       _tldTokens: null,
-      containerIndex: containers && containers.get(cookieStoreId) || -1,
-      hasHTTPScheme: protocol === "https:" || protocol === "http:",
-      hasPathname: pathnameTrimmed !== "",
       hash,
       hostname,
       id,
@@ -89,14 +88,73 @@ class TabProps {
       isDuplicate: false,
       pathname: pathnameTrimmed,
       queryString: sortByQueryString ? searchParams.toString() : "",
-      scheme: protocol,
-      sortMode,
       status,
-      tab,
       title: title || "",
-      url,
       windowId,
       windowProps
+    });
+
+    const criteriaBase = [
+      containerIndex,
+      protocol,
+      this.lowerDomainTokens,
+      this.tldTokens,
+      hasPathname,
+      this.pathnameTokens,
+      this.queryString,
+      this.hash,
+      this.title
+    ];
+
+    let criteria;
+    switch (sortMode) {
+      case 1:
+        criteria = [
+          containerIndex,
+          protocol,
+          this.lowerDomainTokens,
+          this.tldTokens,
+          hasPathname,
+          this.title,
+          this.pathnameTokens,
+          this.queryString,
+          this.hash
+        ];
+        break;
+      case 2:
+        criteria = criteriaBase;
+        break;
+      case 3:
+        criteria = [
+          containerIndex,
+          this.title,
+          protocol,
+          this.lowerDomainTokens,
+          this.tldTokens,
+          hasPathname,
+          this.pathnameTokens,
+          this.queryString,
+          this.hash
+        ];
+        break;
+      case 4:
+        criteria = [
+          containerIndex,
+          protocol,
+          this.lowerDomainTokens,
+          this.tldTokens
+        ];
+        break;
+      default:
+        criteria = [
+          containerIndex
+        ];
+        break;
+    }
+
+    Object.assign(this, {
+      criteria,
+      criteriaBase
     });
   }
 
@@ -331,8 +389,9 @@ async function processTabs(windowId, sort, deduplicate, prefs) {
       } catch (err) {}
     };
 
+    const sortMode = SORT_MODES.get(prefs.pref_tabs_sort_by_parts);
     const sortPrefs = {
-      sortMode: SORT_MODES.get(prefs.pref_tabs_sort_by_parts),
+      sortMode,
       sortByQueryString: prefs.pref_tabs_sort_by_query_string === "true"
     }
 
@@ -343,9 +402,11 @@ async function processTabs(windowId, sort, deduplicate, prefs) {
     if (!sort)
       return Promise.resolve();
 
+    const compareFunction = sortMode === 4 ? compareTabsOrderAuto : compareTabsOrder;
+
     // Sort and move tabs into place.
     return browser.tabs.move(
-      tabPropsArray.sort(compareTabsOrder).map(tabProps => tabProps.id),
+      tabPropsArray.sort(compareFunction).map(tabProps => tabProps.id),
       { index }
     );
   }, err => {
@@ -353,14 +414,8 @@ async function processTabs(windowId, sort, deduplicate, prefs) {
   }).then(() => {
 
     // Detect duplicate tabs.
-    if (deduplicate) {
-      let tabPropsA = null;
-      tabPropsArray.sort(compareTabsSimilarity).forEach(tabPropsB => {
-        if (tabPropsA && compareTabsSimilarity(tabPropsA, tabPropsB) === 0)
-          tabPropsA.isDuplicate = true;
-        tabPropsA = tabPropsB;
-      });
-    }
+    if (deduplicate)
+      tabPropsArray.sort(compareTabsSimilarity);
 
     // Filter duplicate and blank tabs.
     const unwantedTabs = tabPropsArray.filter(tabProps =>
@@ -401,26 +456,30 @@ async function processTabs(windowId, sort, deduplicate, prefs) {
 function compareTabsOrder(propsA, propsB) {
   "use strict";
 
-  const containerDiff = propsA.containerIndex - propsB.containerIndex;
-  if (containerDiff)
-    return containerDiff;
+  const criteriaA = propsA.criteria;
+  const criteriaB = propsB.criteria;
+  const criteriaLength = criteriaA.length;
+  let result = 0;
 
-  const sortMode = propsA.sortMode;
-  if (sortMode === 0)
-    return 0;
+  for (let index = 0; index < criteriaLength; ++index) {
+    let criterionA = criteriaA[index];
+    let criterionB = criteriaB[index];
+    switch (typeof criterionA) {
+      case "object":
+        result = compareTokens(criterionA, criterionB);
+        break;
+      case "string":
+        result = criterionA.localeCompare(criterionB);
+        break;
+      default:
+        result = criterionA - criterionB;
+        break;
+    }
+    if (result)
+      break;
+  }
 
-  return (sortMode === 3 ? propsA.title.localeCompare(propsB.title) : 0) || // title-host-path
-    (propsA.hasHTTPScheme && propsB.hasHTTPScheme ?
-      0 : propsA.scheme.localeCompare(propsB.scheme)) ||
-    compareTokens(propsA.lowerDomainTokens, propsB.lowerDomainTokens) ||
-    compareTokens(propsA.tldTokens, propsB.tldTokens) ||
-    (propsA.hasPathname - propsB.hasPathname) ||
-    (sortMode === 4 ? compareTabsOrderAuto(propsA, propsB) : 0) || // auto
-    (sortMode === 1 ? propsA.title.localeCompare(propsB.title) : 0) || // host-title-path
-    compareTokens(propsA.pathnameTokens, propsB.pathnameTokens) ||
-    propsA.queryString.localeCompare(propsB.queryString) ||
-    propsA.hash.localeCompare(propsB.hash) ||
-    (sortMode === 2 ? propsA.title.localeCompare(propsB.title) : 0); // host-path-title
+  return result;
 }
 
 
@@ -433,42 +492,37 @@ function compareTabsOrder(propsA, propsB) {
  */
 function compareTabsOrderAuto(propsA, propsB) {
   "use strict";
+  
+  let result;
+  if ((result = compareTabsOrder(propsA, propsB)))
+    return result;
 
   const tokensA = propsA.pathnameTokens;
   const tokensB = propsB.pathnameTokens;
   const tokensLengthA = tokensA.length;
   const tokensLengthB = tokensB.length;
+  const tokensLength = Math.min(tokensLengthA, tokensLengthB);
   const tokensLengthDiff = tokensLengthA - tokensLengthB;
-  const shortestLength = Math.min(tokensLengthA, tokensLengthB);
 
-  let result = 0;
-  let subIndex = 0;
-
-  for (let index = 0; index < shortestLength; ++index) {
-    if ((result = tokensA[index].localeCompare(tokensB[index]))) {
-      subIndex = index;
+  let index = 0;
+  for (index = 0; index < tokensLength; ++index) {
+    if ((result = tokensA[index].localeCompare(tokensB[index])))
       break;
-    }
   }
 
   if (tokensLengthDiff)
-    return result || tokensLengthDiff; // Path lengths are different.
+    return result || tokensLengthDiff;
 
-  if (result === 0) {
-    result = propsA.title.localeCompare(propsB.title);
-  } else if (shortestLength > 0 && subIndex > 1) {
+  if (result && index > 1) {
     const maybeSlugA = propsA.maybeSlug;
     const maybeSlugB = propsB.maybeSlug;
-
-    // Paths differ but share at least two leading tokens. Do slug matching.
-    if (maybeSlugA === "" || maybeSlugB === "") {
-      result = propsA.title.localeCompare(propsB.title);
-    } else {
-      result = maybeSlugA.localeCompare(maybeSlugB);
-    }
+    if (maybeSlugA !== "" && maybeSlugB !== "")
+      return maybeSlugA.localeCompare(maybeSlugB);
   }
 
-  return result;
+  return propsA.title.localeCompare(propsB.title) ||
+    propsA.queryString.localeCompare(propsB.queryString) ||
+    propsA.hash.localeCompare(propsB.hash);
 }
 
 
@@ -482,16 +536,37 @@ function compareTabsOrderAuto(propsA, propsB) {
 function compareTabsSimilarity(propsA, propsB) {
   "use strict";
 
-  return (propsA.containerIndex - propsB.containerIndex) ||
-    (!propsA.hasHTTPScheme || !propsB.hasHTTPScheme ?
-      propsA.scheme.localeCompare(propsB.scheme) : 0) ||
-    compareTokens(propsA.lowerDomainTokens, propsB.lowerDomainTokens) ||
-    compareTokens(propsA.tldTokens, propsB.tldTokens) ||
-    (propsA.hasPathname - propsB.hasPathname) ||
-    compareTokens(propsA.pathnameTokens, propsB.pathnameTokens) ||
-    propsA.queryString.localeCompare(propsB.queryString) ||
-    propsA.hash.localeCompare(propsB.hash) ||
-    propsA.title.localeCompare(propsB.title);
+  const criteriaA = propsA.criteriaBase;
+  const criteriaB = propsB.criteriaBase;
+  const criteriaLength = criteriaA.length;
+  let result = 0;
+
+  for (let index = 0; index < criteriaLength; ++index) {
+    let criterionA = criteriaA[index];
+    let criterionB = criteriaB[index];
+    switch (typeof criterionA) {
+      case "object":
+        result = compareTokens(criterionA, criterionB);
+        break;
+      case "string":
+        result = criterionA.localeCompare(criterionB);
+        break;
+      default:
+        result = criterionA - criterionB;
+        break;
+    }
+    if (result)
+      break;
+  }
+
+  if (!result) {
+    if (propsA.isActive)
+      propsB.isDuplicate = true;
+    else if (propsB.isActive || propsA.index < propsB.index)
+      propsA.isDuplicate = true;
+  }
+
+  return result;
 }
 
 
