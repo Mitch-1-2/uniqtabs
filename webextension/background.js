@@ -43,7 +43,6 @@ browser.storage.onChanged.addListener(onStorageChanged);
 // Listen for tab updates.
 browser.tabs.onUpdated.addListener(onTabUpdated);
 
-
 class TabProps {
   constructor(tab, windowProps, containers, sortPrefs) {
     const {
@@ -214,7 +213,7 @@ class WindowProps {
   getHostnameTokens(hostname) {
     let hostnameTokens = this.hostnameTokenCache.get(hostname);
     if (!hostnameTokens) {
-      const tokens = hostname.split('.').reverse();
+      const tokens = hostname.split(".").reverse();
       const splitIndex = (tokens.length > 2 && tokens[1].length <= 3) ? 2 : 1;
       hostnameTokens = [tokens.slice(0, splitIndex), tokens.slice(splitIndex)];
       this.hostnameTokenCache.set(hostname, hostnameTokens);
@@ -248,6 +247,7 @@ WindowProps.windows = new Set();
 
 WindowProps.hasWindowById = function(windowId) {
   "use strict";
+
   return WindowProps.windows.has(windowId);
 }
 
@@ -257,6 +257,7 @@ WindowProps.hasWindowById = function(windowId) {
  */
 function onBrowserAction(tab, onClickData) {
   "use strict";
+
   const prefs = Object.assign({}, PREFS);
   const sort = prefs.pref_tabs_sort_on_browser_action === "true" &&
     (prefs.pref_tabs_sort_by_container === "true" ||
@@ -276,6 +277,7 @@ function onBrowserAction(tab, onClickData) {
  */
 async function onStorageChanged(changes, areaName) {
   "use strict";
+
   if (areaName !== "sync" || !("preferences" in changes)) {
     return;
   }
@@ -287,6 +289,7 @@ async function onStorageChanged(changes, areaName) {
 
 function onTabUpdated(tabId, changeInfo, tab) {
   "use strict";
+
   const prefs = Object.assign({}, PREFS);
   const sort = prefs.pref_tabs_sort_on_update === "true" &&
     (prefs.pref_tabs_sort_by_container === "true" ||
@@ -307,6 +310,7 @@ function onTabUpdated(tabId, changeInfo, tab) {
  */
 function updateUI() {
   "use strict";
+
   const sort = PREFS.pref_tabs_sort_on_browser_action === "true";
   const deduplicate = PREFS.pref_tabs_deduplicate_on_browser_action === "true";
 
@@ -358,6 +362,7 @@ function updateUI() {
  */
 async function processTabs(windowId, sort, deduplicate, prefs) {
   "use strict";
+
   let index;
   let tabPropsArray = [];
 
@@ -582,14 +587,15 @@ function compareTabsSimilarity(propsA, propsB) {
  */
 function compareTokens(tokensA, tokensB) {
   "use strict";
+
   if (tokensA === tokensB)
     return 0;
 
   const tokensLengthA = tokensA.length;
   const tokensLengthB = tokensB.length;
-  const shortestLength = Math.min(tokensLengthA, tokensLengthB);
+  const tokensLength = Math.min(tokensLengthA, tokensLengthB);
 
-  for (let index = 0; index < shortestLength; ++index) {
+  for (let index = 0; index < tokensLength; ++index) {
     let result = tokensA[index].localeCompare(tokensB[index]);
     if (result)
       return result;
