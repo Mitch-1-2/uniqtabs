@@ -44,164 +44,117 @@ browser.storage.onChanged.addListener(onStorageChanged);
 browser.tabs.onUpdated.addListener(onTabUpdated);
 
 class TabProps {
-  constructor(tab, windowProps, containers, sortPrefs) {
-    const {
-      active,
-      cookieStoreId = null,
-      id,
-      index,
-      status,
-      title,
-      url,
-      windowId
-    } = tab;
+  #lowerDomainTokens = null;
+  #maybeSlug = null;
+  #pathnameTokens = null;
+  #tldTokens = null;
+  isDuplicate = false;
 
-    const {
+  constructor(tab, windowProps, containers, sortPrefs) {
+    let url;
+    ({
+      active: this.isActive,
+      id: this.id,
+      index: this.index,
+      status: this.status,
+      title: this.title = "",
+      url,
+      windowId: this.windowId
+    } = tab);
+
+    this.isBlank = BLANK_TAB_URLS.has(url);
+    this.windowProps = windowProps;
+
+    let protocol, pathname, searchParams;
+    ({
       protocol = ":",
-      hostname = "",
+      hostname: this.hostname = "",
       pathname = "",
       searchParams = "",
-      hash = "#"
-    } = new URL(url || "");
+      hash: this.hash = "#"
+    } = new URL(url || ""));
 
-    const pathnameTrimmed = pathname.replace(/^\/|\/$/g, ""); // trim slashes
-    const hasPathname = pathnameTrimmed !== "";
-    const containerIndex = containers && containers.get(cookieStoreId) || -1;
+    this.pathname = pathname.replace(/^\/|\/$/g, ""); // trim slashes
+
+    const hasPathname = this.pathname !== "";
+    const containerIndex = containers?.get(tab?.cookieStoreId) || -1;
 
     const {
       sortMode,
       sortByQueryString
     } = sortPrefs;
 
-    Object.assign(this, {
-      _lowerDomainTokens: null,
-      _pathnameTokens: null,
-      _maybeSlug: null,
-      _tldTokens: null,
-      hash,
-      hostname,
-      id,
-      index,
-      isActive: active,
-      isBlank: BLANK_TAB_URLS.has(url),
-      isDuplicate: false,
-      pathname: pathnameTrimmed,
-      queryString: sortByQueryString ? searchParams.toString() : "",
-      status,
-      title: title || "",
-      windowId,
-      windowProps
-    });
+    this.queryString = sortByQueryString ? searchParams.toString() : "";
 
-    const criteriaBase = [
-      containerIndex,
-      protocol,
-      this.lowerDomainTokens,
-      this.tldTokens,
-      hasPathname,
-      this.pathnameTokens,
-      this.queryString,
-      this.hash,
-      this.title
-    ];
+    const domainCriteria = [this.lowerDomainTokens, this.tldTokens, hasPathname.toString()];
+    const pathCriteria = [this.pathnameTokens, this.queryString, this.hash];
 
-    let criteria;
+    this.criteriaBase = [containerIndex, ...domainCriteria, ...pathCriteria, this.title];
+
     switch (sortMode) {
       case 1:
-        criteria = [
-          containerIndex,
-          protocol,
-          this.lowerDomainTokens,
-          this.tldTokens,
-          hasPathname,
-          this.title,
-          this.pathnameTokens,
-          this.queryString,
-          this.hash
-        ];
+        this.criteria = [containerIndex, ...domainCriteria, this.title, ...pathCriteria];
         break;
       case 2:
-        criteria = criteriaBase;
+        this.criteria = this.criteriaBase;
         break;
       case 3:
-        criteria = [
-          containerIndex,
-          this.title,
-          protocol,
-          this.lowerDomainTokens,
-          this.tldTokens,
-          hasPathname,
-          this.pathnameTokens,
-          this.queryString,
-          this.hash
-        ];
+        this.criteria = [containerIndex, this.title, ...domainCriteria, ...pathCriteria];
         break;
       case 4:
-        criteria = [
-          containerIndex,
-          protocol,
-          this.lowerDomainTokens,
-          this.tldTokens
-        ];
+        this.criteria = [containerIndex, ...domainCriteria];
         break;
       default:
-        criteria = [
-          containerIndex
-        ];
+        this.criteria = [containerIndex];
         break;
     }
-
-    Object.assign(this, {
-      criteria,
-      criteriaBase
-    });
   }
 
   get lowerDomainTokens() {
-    if (!this._lowerDomainTokens) {
-      const hostnameTokens = this.windowProps.getHostnameTokens(this.hostname);
-      this._tldTokens = hostnameTokens[0];
-      this._lowerDomainTokens = hostnameTokens[1];
+    if (!this.#lowerDomainTokens) {
+      [this.#tldTokens, this.#lowerDomainTokens] =
+        this.windowProps.getHostnameTokens(this.hostname);
     }
-    return this._lowerDomainTokens;
+    return this.#lowerDomainTokens;
   }
 
   get pathnameTokens() {
-    if (!this._pathnameTokens) {
-      this._pathnameTokens = this.windowProps.getPathnameTokens(this.pathname);
-    }
-    return this._pathnameTokens;
+    return this.#pathnameTokens ??= this.windowProps.getPathnameTokens(this.pathname);
   }
 
   get maybeSlug() {
-    if (this._maybeSlug === null) {
+    if (this.#maybeSlug === null) {
       const pathEnd = this.pathnameTokens.at(-1);
       const titleSlugged = this.title.replace(/ /g,"_").toLocaleLowerCase().replace(/\W/g, "");
 
       // First character of path end matches the first character of slugged title.
       // Naively presume that the path end is a slug.
-      this._maybeSlug = pathEnd.charAt(0) === titleSlugged.charAt(0) ? pathEnd : "";
+      this.#maybeSlug = pathEnd.charAt(0) === titleSlugged.charAt(0) ? pathEnd : "";
     }
-    return this._maybeSlug;
+    return this.#maybeSlug;
   }
 
   get tldTokens() {
-    if (!this._tldTokens) {
-      const hostnameTokens = this.windowProps.getHostnameTokens(this.hostname);
-      this._tldTokens = hostnameTokens[0];
-      this._lowerDomainTokens = hostnameTokens[1];
+    if (!this.#tldTokens) {
+      [this.#tldTokens, this.#lowerDomainTokens] =
+        this.windowProps.getHostnameTokens(this.hostname);
     }
-    return this._tldTokens;
+    return this.#tldTokens;
   }
 }
 
 
 class WindowProps {
+  static #windows = new Set();
+  #hostnameTokenCache = new Map();
+  #pathnameTokenCache = new Map();
+
+  static hasWindowById(windowId) {
+    return WindowProps.#windows.has(windowId);
+  }
+
   constructor(windowId) {
-    WindowProps.windows.add(windowId);
-    this.windowId = windowId;
-    this.hostnameTokenCache = new Map();
-    this.pathnameTokenCache = new Map();
+    WindowProps.#windows.add(this.windowId = windowId);
   }
 
   /*
@@ -211,12 +164,12 @@ class WindowProps {
    * @return              [top-level domain tokens, lower-level domain tokens]
    */
   getHostnameTokens(hostname) {
-    let hostnameTokens = this.hostnameTokenCache.get(hostname);
+    let hostnameTokens = this.#hostnameTokenCache.get(hostname);
     if (!hostnameTokens) {
       const tokens = hostname.split(".").reverse();
       const splitIndex = (tokens.length > 2 && tokens[1].length <= 3) ? 2 : 1;
       hostnameTokens = [tokens.slice(0, splitIndex), tokens.slice(splitIndex)];
-      this.hostnameTokenCache.set(hostname, hostnameTokens);
+      this.#hostnameTokenCache.set(hostname, hostnameTokens);
     }
     return hostnameTokens;
   }
@@ -228,27 +181,19 @@ class WindowProps {
    * @return              [pathname tokens]
    */
   getPathnameTokens(pathname) {
-    let pathnameTokens = this.pathnameTokenCache.get(pathname);
+    let pathnameTokens = this.#pathnameTokenCache.get(pathname);
     if (!pathnameTokens) {
       pathnameTokens = pathname.split("/");
-      this.pathnameTokenCache.set(pathname, pathnameTokens);
+      this.#pathnameTokenCache.set(pathname, pathnameTokens);
     }
     return pathnameTokens;
   }
 
   clear() {
-    this.hostnameTokenCache.clear();
-    this.pathnameTokenCache.clear();
-    WindowProps.windows.delete(this.windowId);
+    this.#hostnameTokenCache.clear();
+    this.#pathnameTokenCache.clear();
+    WindowProps.#windows.delete(this.windowId);
   }
-}
-
-WindowProps.windows = new Set();
-
-WindowProps.hasWindowById = function(windowId) {
-  "use strict";
-
-  return WindowProps.windows.has(windowId);
 }
 
 
@@ -296,9 +241,8 @@ function onTabUpdated(tabId, changeInfo, tab) {
     prefs.pref_tabs_sort_by_parts !== "none");
   const deduplicate = prefs.pref_tabs_deduplicate_on_update === "true";
 
-  if (changeInfo.status !== "complete" || !changeInfo.status) {
+  if (changeInfo.status !== "complete" || !changeInfo.status)
     return;
-  }
 
   if (sort || deduplicate)
     return processTabs(tab.windowId, sort, deduplicate, prefs);
@@ -464,11 +408,11 @@ function compareTabsOrder(propsA, propsB) {
   const criteriaA = propsA.criteria;
   const criteriaB = propsB.criteria;
   const criteriaLength = criteriaA.length;
-  let result = 0;
 
   for (let index = 0; index < criteriaLength; ++index) {
     let criterionA = criteriaA[index];
     let criterionB = criteriaB[index];
+    let result;
     switch (typeof criterionA) {
       case "object":
         result = compareTokens(criterionA, criterionB);
@@ -481,10 +425,10 @@ function compareTabsOrder(propsA, propsB) {
         break;
     }
     if (result)
-      break;
+      return result;
   }
 
-  return result;
+  return 0;
 }
 
 
