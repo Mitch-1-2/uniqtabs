@@ -535,15 +535,11 @@ function compareTokens(tokensA, tokensB) {
   if (tokensA === tokensB)
     return 0;
 
-  const tokensLengthA = tokensA.length;
-  const tokensLengthB = tokensB.length;
-  const tokensLength = Math.min(tokensLengthA, tokensLengthB);
-
-  for (let index = 0; index < tokensLength; ++index) {
-    let result = tokensA[index].localeCompare(tokensB[index]);
+  for (let index = 0; ; ++index) {
+    let result = tokensA[index]?.localeCompare(tokensB[index] ?? "");
     if (result)
       return result;
+    if (result === undefined)
+      return tokensA.length - tokensB.length;
   }
-
-  return tokensLengthA - tokensLengthB;
 }
