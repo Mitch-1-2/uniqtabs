@@ -307,91 +307,101 @@ function updateUI() {
 async function processTabs(windowId, sort, deduplicate, prefs) {
   "use strict";
 
-  let index;
-  let tabPropsArray = [];
-
   if (WindowProps.hasWindowById(windowId))
     return Promise.resolve();
 
   const windowProps = new WindowProps(windowId);
-
-  return browser.tabs.query({
+  const unpinnedTabs = await browser.tabs.query({
     pinned: false,
-    windowId,
-  }).then(async unpinnedTabs => {
-    if (!unpinnedTabs || unpinnedTabs.length === 0) {
-      return Promise.reject(
-        new Error(browser.i18n.getMessage("error_tabs_none")));
-    }
+    windowId
+  });
 
-    // Get first tab index.
-    ({ index } = unpinnedTabs[0]);
-
-    let containers = null;
-
-    if (("contextualIdentities" in browser) && prefs.pref_tabs_sort_by_container === "true") {
-      try {
-        const containersArray = await browser.contextualIdentities.query({});
-        containers = new Map(
-          containersArray.map((c, index) => [c.cookieStoreId, index])
-        );
-      } catch (err) {}
-    };
-
-    const sortMode = SORT_MODES.get(prefs.pref_tabs_sort_by_parts);
-    const sortPrefs = {
-      sortMode,
-      sortByQueryString: prefs.pref_tabs_sort_by_query_string === "true"
-    }
-
-    tabPropsArray = unpinnedTabs.map(
-      unpinnedTab => new TabProps(unpinnedTab, windowProps, containers, sortPrefs)
-    );
-
-    if (!sort)
-      return Promise.resolve();
-
-    const compareFunction = sortMode === 4 ? compareTabsOrderAuto : compareTabsOrder;
-
-    // Sort and move tabs into place.
-    return browser.tabs.move(
-      tabPropsArray.sort(compareFunction).map(tabProps => tabProps.id),
-      { index }
-    );
-  }, err => {
-    return Promise.reject(err);
-  }).then(() => {
-
-    // Detect duplicate tabs.
-    if (deduplicate)
-      tabPropsArray.sort(compareTabsSimilarity);
-
-    // Filter duplicate and blank tabs.
-    const unwantedTabs = tabPropsArray.filter(tabProps =>
-      tabProps.status === "complete" &&
-        (tabProps.isBlank || deduplicate && tabProps.isDuplicate)
-    );
-
-    if (index === 0 && tabPropsArray.length === unwantedTabs.length) {
-
-      // Create a new tab to remain after culling.
-      return browser.tabs.create({
-        active: false,
-        windowId: windowId
-      }).finally(browser.tabs.remove(unwantedTabs.map(tab => tab.id)));
-    } else {
-      return browser.tabs.remove(unwantedTabs.map(tab => tab.id));
-    }
-  }, err => {
-    return Promise.reject(err);
-  }).catch(err => {
-
-    // Error caught. Do nothing.
-  }).finally(() => {
-    tabPropsArray.length = 0;
+  if (!unpinnedTabs?.length) {
     windowProps.clear();
     return Promise.resolve();
-  });
+  }
+
+  // Get first tab index.
+  const index = unpinnedTabs[0].index;
+
+  let containers = null;
+  if (("contextualIdentities" in browser) && prefs.pref_tabs_sort_by_container === "true") {
+    try {
+      const containersArray = await browser.contextualIdentities.query({});
+      containers = new Map(
+        containersArray.map((c, i) => [c.cookieStoreId, i])
+      );
+    } catch (err) {}
+  }
+
+  const sortMode = SORT_MODES.get(prefs.pref_tabs_sort_by_parts);
+  const sortPrefs = {
+    sortMode,
+    sortByQueryString: prefs.pref_tabs_sort_by_query_string === "true"
+  }
+
+  const tabPropsArray = unpinnedTabs.map(
+    unpinnedTab => new TabProps(unpinnedTab, windowProps, containers, sortPrefs)
+  );
+
+  if (sort)
+    await sortTabs(tabPropsArray, index, sortMode);
+  await deduplicateTabs(windowId, tabPropsArray, index, deduplicate);
+
+  tabPropsArray.length = 0;
+  windowProps.clear();
+  return Promise.resolve();
+}
+
+
+/*
+ * Sorts tabs.
+ *
+ * @param windowId      window ID
+ * @param index         index of first unpinned tab
+ * @param sortMode      preferences
+ */
+async function sortTabs(tabPropsArray, index, sortMode) {
+  "use strict";
+
+  const comparator = sortMode === 4 ? compareTabsOrderAuto : compareTabsOrder;
+
+  // Sort and move tabs into place.
+  return browser.tabs.move(
+    tabPropsArray.sort(comparator).map(tabProps => tabProps.id),
+    { index }
+  ).catch((err) => Promise.resolve());
+}
+
+
+/*
+ * Deduplicates, and removes low-priority (or blank) tabs.
+ *
+ * @param windowId      window ID
+ * @param sort          sort tabs
+ * @param deduplicate   deduplicate tabs
+ * @param prefs         preferences
+ */
+async function deduplicateTabs(windowId, tabPropsArray, index, deduplicate) {
+  "use strict";
+
+  tabPropsArray.sort(compareTabsSimilarity);
+
+  // Filter duplicate and blank tabs.
+  const unwantedTabs = tabPropsArray.filter(tabProps =>
+    tabProps.status === "complete" &&
+      (tabProps.isBlank || deduplicate && tabProps.isDuplicate)
+  );
+
+  // Create a new tab to remain after culling.
+  if (index === 0 && tabPropsArray.length === unwantedTabs.length) {
+    return browser.tabs.create({
+      active: false,
+      windowId: windowId
+    }).finally(browser.tabs.remove(unwantedTabs.map(tab => tab.id)));
+  }
+
+  return browser.tabs.remove(unwantedTabs.map(tab => tab.id))
 }
 
 
