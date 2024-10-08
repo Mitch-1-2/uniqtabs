@@ -86,28 +86,31 @@ class TabProps {
 
     this.queryString = sortByQueryString ? searchParams.toString() : "";
 
-    const domainCriteria = [this.lowerDomainTokens, this.tldTokens, hasPathname.toString()];
+    const domainCriteria = [this.lowerDomainTokens, this.tldTokens, hasPathname];
     const pathCriteria = [this.pathnameTokens, this.queryString, this.hash];
-
-    this.criteriaBase = [containerIndex, ...domainCriteria, ...pathCriteria, this.title];
+    this.dupeCriteria = [
+      containerIndex, protocol, ...domainCriteria, ...pathCriteria, this.title
+    ].join("\u0010") || "";
+    let criteria;
 
     switch (sortMode) {
       case 1:
-        this.criteria = [containerIndex, ...domainCriteria, this.title, ...pathCriteria];
+        criteria = [containerIndex, protocol, ...domainCriteria, this.title, ...pathCriteria];
         break;
       case 2:
-        this.criteria = this.criteriaBase;
-        break;
+        this.sortCriteria = this.dupeCriteria;
+        return;
       case 3:
-        this.criteria = [containerIndex, this.title, ...domainCriteria, ...pathCriteria];
+        criteria = [containerIndex, protocol, this.title, ...domainCriteria, ...pathCriteria];
         break;
       case 4:
-        this.criteria = [containerIndex, ...domainCriteria];
+        criteria = [containerIndex, protocol, ...domainCriteria];
         break;
       default:
-        this.criteria = [containerIndex];
+        criteria = [containerIndex];
         break;
     }
+    this.sortCriteria = criteria.join("\u0010") || "";
   }
 
   get lowerDomainTokens() {
@@ -415,30 +418,7 @@ async function deduplicateTabs(windowId, tabPropsArray, index, deduplicate) {
 function compareTabsOrder(propsA, propsB) {
   "use strict";
 
-  const criteriaA = propsA.criteria;
-  const criteriaB = propsB.criteria;
-  const criteriaLength = criteriaA.length;
-
-  for (let index = 0; index < criteriaLength; ++index) {
-    let criterionA = criteriaA[index];
-    let criterionB = criteriaB[index];
-    let result;
-    switch (typeof criterionA) {
-      case "object":
-        result = compareTokens(criterionA, criterionB);
-        break;
-      case "string":
-        result = criterionA.localeCompare(criterionB);
-        break;
-      default:
-        result = criterionA - criterionB;
-        break;
-    }
-    if (result)
-      return result;
-  }
-
-  return 0;
+  return propsA.sortCriteria.localeCompare(propsB.sortCriteria);
 }
 
 
@@ -495,28 +475,7 @@ function compareTabsOrderAuto(propsA, propsB) {
 function compareTabsSimilarity(propsA, propsB) {
   "use strict";
 
-  const criteriaA = propsA.criteriaBase;
-  const criteriaB = propsB.criteriaBase;
-  const criteriaLength = criteriaA.length;
-  let result = 0;
-
-  for (let index = 0; index < criteriaLength; ++index) {
-    let criterionA = criteriaA[index];
-    let criterionB = criteriaB[index];
-    switch (typeof criterionA) {
-      case "object":
-        result = compareTokens(criterionA, criterionB);
-        break;
-      case "string":
-        result = criterionA.localeCompare(criterionB);
-        break;
-      default:
-        result = criterionA - criterionB;
-        break;
-    }
-    if (result)
-      break;
-  }
+  const result = propsA.dupeCriteria.localeCompare(propsB.dupeCriteria);
 
   if (!result) {
     if (propsA.isActive)
