@@ -7,7 +7,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-const PREFS_DEFAULT = {
+export const PREFS_DEFAULT = {
   "pref_tabs_deduplicate_on_browser_action": "false",
   "pref_tabs_deduplicate_on_update": "false",
   "pref_tabs_sort_by_container": "true",

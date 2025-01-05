@@ -1,33 +1,30 @@
 {
   "default_locale": "en",
-  "manifest_version": 2,
+  "manifest_version": 3,
   "author": "Mitchell Field",
   "description": "__MSG_extension_description__",
   "name": "uniqtabs (Unique Tabs)",
   "short_name": "uniqtabs",
   "version": "1.0.3",
 
-  "applications": {
+  "browser_specific_settings": {
     "gecko": {
       "id": "uniqtabs@mitchellfield.id.au"
     }
   },
 
   "background": {
-    "scripts": [
-      "browser-polyfill.js",
-      "prefs.js",
-      "background.js"
-    ]
+    "scripts": ["background.js"],
+    "service_worker": "background.js",
+    "type": "module"
   },
 
-  "browser_action": {
-    "browser_style": true,
+  "action": {
     "default_title": "__MSG_browser_action_default_label__"
   },
 
   "commands": {
-    "_execute_browser_action": {
+    "_execute_action": {
       "description": "__MSG_browser_action_default_label__",
       "suggested_key": {
         "default": "Ctrl+Shift+Space"
@@ -46,7 +43,6 @@
   },
 
   "options_ui": {
-    "browser_style": true,
     "page": "options.html",
     "open_in_tab": false
   },

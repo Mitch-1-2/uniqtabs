@@ -7,6 +7,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+import "./browser-polyfill.js";
+import { PREFS_DEFAULT } from "./prefs.js";
+
 // URLs of pages with state that isn't important enough to keep.
 // Considered blank.
 const BLANK_TAB_URLS = new Set([
@@ -35,7 +38,7 @@ browser.storage.sync.get().then(async storedObject => {
 });
 
 // Set browser action.
-browser.browserAction.onClicked.addListener(onBrowserAction);
+browser.action.onClicked.addListener(onBrowserAction);
 
 // Listen to changes in storage.
 browser.storage.onChanged.addListener(onStorageChanged);
@@ -285,14 +288,14 @@ function updateUI() {
   }
 
   // Set browser action title.
-  browser.browserAction.setTitle({
+  browser.action.setTitle({
     title: browser.i18n.getMessage(titleID)
   });
 
   // Set browser action shortcut description.
   if ("update" in browser.commands) {
     browser.commands.update({
-      name: "_execute_browser_action",
+      name: "_execute_action",
       description: browser.i18n.getMessage(shortcutDescriptionID)
     });
   }
