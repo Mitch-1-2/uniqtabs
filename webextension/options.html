@@ -12,16 +12,18 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta name="color-scheme" content="light dark">
     <link href="options.css" rel="stylesheet">
     <title>uniqtabs (Unique Tabs) options</title>
   </head>
   <body>
-    <div class="browser-style">
+    <div>
       <form id="form">
+        <br/>
         <fieldset>
         <legend id="fieldset_sorting_legend"></legend>
-        <div class="browser-style">
-          <label for="pref_tabs_sort_by_parts"></label>
+        <div>
+          <label for="pref_tabs_sort_by_parts" class="info-label"></label>
           <br/>
           <input id="pref_tabs_sort_by_parts_option_0"
             name="pref_tabs_sort_by_parts"
@@ -54,40 +56,48 @@
             value="auto"/>
           <label for="pref_tabs_sort_by_parts_option_4"></label>
         </div>
-        <div class="browser-style">
+        <div>
           <input id="pref_tabs_sort_by_container"
             name="pref_tabs_sort_by_container"
             type="checkbox" checked="checked"/>
             <label for="pref_tabs_sort_by_container"></label>
         </div>
-        <div class="browser-style">
+        <div>
           <input id="pref_tabs_sort_by_query_string"
             name="pref_tabs_sort_by_query_string"
             type="checkbox"
             checked="checked"/>
             <label for="pref_tabs_sort_by_query_string"></label>
         </div>
-        <div class="browser-style">
+        <hr/>
+        <div>
+          <label for="pref_tabs_sort_on" class="info-label"></label>
+        </div>
+        <div>
           <input id="pref_tabs_sort_on_browser_action"
             name="pref_tabs_sort_on_browser_action"
             type="checkbox"/>
             <label for="pref_tabs_sort_on_browser_action"></label>
         </div>
-        <div class="browser-style">
+        <div>
           <input id="pref_tabs_sort_on_update"
             name="pref_tabs_sort_on_update"
             type="checkbox"/>
             <label for="pref_tabs_sort_on_update"></label>
         </div>
         </fieldset>
+        <br/>
         <fieldset>
         <legend id="fieldset_deduplicating_legend"></legend>
-        <div class="browser-style">
+        <div>
+          <label for="pref_tabs_deduplicate_on" class="info-label"></label>
+        </div>
+        <div>
           <input id="pref_tabs_deduplicate_on_browser_action"
             name="pref_tabs_deduplicate_on_browser_action" type="checkbox"/>
             <label for="pref_tabs_deduplicate_on_browser_action"></label>
         </div>
-        <div class="browser-style">
+        <div>
           <input id="pref_tabs_deduplicate_on_update"
             name="pref_tabs_deduplicate_on_update"
             type="checkbox"/>
@@ -95,9 +105,9 @@
         </div>
         </fieldset>
         <br/>
-        <div class="browser-style">
-          <button id="reset" type="reset" class="browser-style"></button>
-          <button id="submit" type="submit" class="browser-style"></button>
+        <div>
+          <button id="reset" type="reset"></button>
+          <button id="submit" type="submit"></button>
           <label id="submit_label" for="submit"></label>
         </div>
       </form>

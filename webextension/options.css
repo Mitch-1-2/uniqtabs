@@ -1,3 +1,27 @@
+:root {
+  color-scheme: light dark;
+  user-select: none;
+}
+
 body {
-  padding: 1em;
+  font-family: sans-serif;
+}
+
+button, label {
+  font-family: sans-serif;
+  font-size: 1em;
+  line-height: 2em;
+  white-space: nowrap;
+}
+
+hr {
+  opacity: 0.2;
+}
+
+legend {
+  font-weight: bold;
+}
+
+.info-label {
+  opacity: 0.6;
 }
