@@ -5,7 +5,7 @@
   "description": "__MSG_extension_description__",
   "name": "uniqtabs (Unique Tabs)",
   "short_name": "uniqtabs",
-  "version": "1.0.4",
+  "version": "1.0.5",
 
   "browser_specific_settings": {
     "gecko": {
