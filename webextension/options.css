@@ -3,6 +3,12 @@
   user-select: none;
 }
 
+@-moz-document url-prefix() {
+  .firefox.box-block {
+    display: block !important;
+  }
+}
+
 body {
   font-family: sans-serif;
 }
