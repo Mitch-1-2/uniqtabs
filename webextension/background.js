@@ -211,8 +211,8 @@ function onBrowserAction(tab, onClickData) {
 
   const prefs = Object.assign({}, PREFS);
   const sort = prefs.pref_tabs_sort_on_browser_action === "true" &&
-    (prefs.pref_tabs_sort_by_container === "true" ||
-    prefs.pref_tabs_sort_by_parts !== "none");
+    prefs.pref_tabs_sort_by_parts !== "none";
+
   const deduplicate = prefs.pref_tabs_deduplicate_on_browser_action === "true";
 
   if (sort || deduplicate)
@@ -261,7 +261,8 @@ function onTabUpdated(tabId, changeInfo, tab) {
 function updateUI() {
   "use strict";
 
-  const sort = PREFS.pref_tabs_sort_on_browser_action === "true";
+  const sort = PREFS.pref_tabs_sort_on_browser_action === "true" &&
+    PREFS.pref_tabs_sort_by_parts !== "none";
   const deduplicate = PREFS.pref_tabs_deduplicate_on_browser_action === "true";
 
   // Default browser action title.

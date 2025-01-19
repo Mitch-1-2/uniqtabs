@@ -9,7 +9,7 @@
     "message": "Deduplicate tabs"
   },
   "browser_action_none_label": {
-    "message": "uniqtabs: Configure tab sorting"
+    "message": "Configure uniqtabs"
   },
   "browser_action_sort_deduplicate_label": {
     "message": "Sort and deduplicate tabs"
