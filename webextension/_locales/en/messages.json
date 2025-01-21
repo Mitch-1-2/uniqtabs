@@ -41,6 +41,30 @@
   "fieldset_sorting_legend": {
     "message": "Sort"
   },
+  "options_ui_diagram_address": {
+    "message": "https://www.example.com/media/videos/?v=123&play=0"
+  },
+  "options_ui_diagram_label": {
+    "message": "Example:"
+  },
+  "options_ui_diagram_host_label": {
+    "message": "              host"
+  },
+  "options_ui_diagram_host_section": {
+    "message": "        └──────┬──────┘"
+  },
+  "options_ui_diagram_path_label": {
+    "message": "             path"
+  },
+  "options_ui_diagram_path_section": {
+    "message": "        └─────┬──────┘"
+  },
+  "options_ui_diagram_query_label": {
+    "message": "           query"
+  },
+  "options_ui_diagram_query_section": {
+    "message": "       └─────┬─────┘"
+  },
   "options_ui_reset": {
     "message": "Reset options"
   },
@@ -72,19 +96,19 @@
     "message": "Do not sort tabs"
   },
   "pref_tabs_sort_by_parts_option_1_label": {
-    "message": "Sort by URL host, title, URL path (recommended)"
+    "message": "Sort by host, tab title, path (recommended)"
   },
   "pref_tabs_sort_by_parts_option_2_label": {
-    "message": "Sort by URL host, URL path, title"
+    "message": "Sort by host, path, tab title"
   },
   "pref_tabs_sort_by_parts_option_3_label": {
-    "message": "Sort by title, URL host, URL path"
+    "message": "Sort by tab title, host, path"
   },
   "pref_tabs_sort_by_parts_option_4_label": {
     "message": "Sort using automatic mode"
   },
   "pref_tabs_sort_by_query_string_label": {
-    "message": "Sort by URL query string (e.g. ?video=123&autoplay=0)"
+    "message": "Sort by query"
   },
   "pref_tabs_sort_on_label": {
     "message": "Choose when to sort tabs."

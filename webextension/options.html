@@ -22,6 +22,26 @@
         <br/>
         <fieldset>
         <legend id="fieldset_sorting_legend"></legend>
+        <figure>
+          <figcaption id="options_ui_diagram_label" class="info-label"></figcaption>
+          <code>
+          <table>
+            <tr>
+              <td id="options_ui_diagram_address" colspan="3"></td>
+            </tr>
+            <tr>
+              <td id="options_ui_diagram_host_section"></td>
+              <td id="options_ui_diagram_path_section"></td>
+              <td id="options_ui_diagram_query_section"></td>
+            </tr>
+            <tr>
+              <td id="options_ui_diagram_host_label"></td>
+              <td id="options_ui_diagram_path_label"></td>
+              <td id="options_ui_diagram_query_label"></td>
+            </tr>
+          </table>
+          </code>
+        </figure>
         <div>
           <label for="pref_tabs_sort_by_parts" class="info-label"></label>
           <br/>
@@ -56,18 +76,18 @@
             value="auto"/>
           <label for="pref_tabs_sort_by_parts_option_4"></label>
         </div>
-        <div class="firefox box-block" style="display:none">
-          <input id="pref_tabs_sort_by_container"
-            name="pref_tabs_sort_by_container"
-            type="checkbox" checked="checked"/>
-            <label for="pref_tabs_sort_by_container"></label>
-        </div>
         <div>
           <input id="pref_tabs_sort_by_query_string"
             name="pref_tabs_sort_by_query_string"
             type="checkbox"
             checked="checked"/>
             <label for="pref_tabs_sort_by_query_string"></label>
+        </div>
+        <div class="firefox box-block" style="display:none">
+          <input id="pref_tabs_sort_by_container"
+            name="pref_tabs_sort_by_container"
+            type="checkbox" checked="checked"/>
+            <label for="pref_tabs_sort_by_container"></label>
         </div>
         <hr/>
         <div>

@@ -28,6 +28,42 @@ legend {
   font-weight: bold;
 }
 
+figure {
+  border: none;
+  display: inline;
+}
+
+table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 50ex;
+}
+
+table, th, td {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
 .info-label {
   opacity: 0.6;
+}
+
+#options_ui_diagram_address {
+  white-space: nowrap;
+}
+
+#options_ui_diagram_host_section, #options_ui_diagram_host_label {
+  color: salmon;
+  white-space:preserve nowrap;
+}
+
+#options_ui_diagram_path_section, #options_ui_diagram_path_label {
+  color: limegreen;
+  white-space:preserve nowrap;
+}
+
+#options_ui_diagram_query_section, #options_ui_diagram_query_label {
+  color: lightsteelblue;
+  white-space:preserve nowrap;
 }

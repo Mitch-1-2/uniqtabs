@@ -104,18 +104,21 @@ function setButtonText() {
  * Sets the label text for the options page.
  */
 function setLabelText() {
-  const labelNodes = document.querySelectorAll("label,legend");
+  const labelNodes = document.querySelectorAll(
+    "figcaption,label,legend,span,td"
+  );
 
   for (const labelNode of labelNodes) {
     const tagName = labelNode.tagName.toLowerCase();
     let id = labelNode.id;
-    if (tagName === "label") {
-      if (id !== "")
-        continue;
-      id = labelNode.getAttribute("for") + "_label";
+    if (id !== "") {
+      labelNode.innerText = browser.i18n.getMessage(id);
+      continue;
     }
-
-    labelNode.innerText = browser.i18n.getMessage(id);
+    if (tagName === "label") {
+      id = labelNode.getAttribute("for") + "_label";
+      labelNode.innerText = browser.i18n.getMessage(id);
+    }
   }
 }
 
