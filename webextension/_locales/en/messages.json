@@ -42,10 +42,10 @@
     "message": "Sort"
   },
   "options_ui_reset": {
-    "message": "Reset"
+    "message": "Reset options"
   },
   "options_ui_submit": {
-    "message": "Save"
+    "message": "Save options"
   },
   "options_ui_submit_unsaved_label": {
     "message": "Options unsaved. \u2718"

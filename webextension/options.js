@@ -53,9 +53,6 @@ function saveOptions(e) {
 
   // Save settings to "sync" storage.
   const savingPrefs = browser.storage.sync.set({ preferences: prefs });
-
-  // Update the saved/unsaved message.
-  savingPrefs.then(() => setSavedStateLabel(e));
 }
 
 
@@ -72,7 +69,6 @@ function setInterface() {
     setOptionText();
     setButtonText();
     setInputValues(storedObject, true);
-    setSavedStateLabel(new CustomEvent("set"));
   });
 }
 
@@ -86,8 +82,8 @@ function resetInterface(e) {
   // Pass an empty preferences object to use defaults.
   setInputValues({ preferences: {} });
 
-  // Set the saved/unsaved message.
-  setSavedStateLabel(e);
+  // Save options.
+  saveOptions(e);
 }
 
 
@@ -174,32 +170,10 @@ function setInputValues(storedObject, setListeners) {
         element.value = value;
       }
       if (setListeners) {
-        element.addEventListener("change", setSavedStateLabel);
+        element.addEventListener("change", saveOptions);
       }
     }
   }
-}
-
-
-/*
- * Sets the saved/unsaved message on the options page.
- *
- * @param e             reset event
- */
-function setSavedStateLabel(e) {
-
-  const eventType = e && e.type;
-
-  if (eventType === "set")
-    return;
-
-  const submitLabel = document.getElementById("submit_label");
-
-  submitLabel.innerText = browser.i18n.getMessage(
-    eventType === "submit" ?
-      "options_ui_submit_saved_label" :
-      "options_ui_submit_unsaved_label"
-  );
 }
 
 
